@@ -71,7 +71,6 @@ def calculateCorrelation(x, y):
       if den==0: return 0
     
       r=num/den
-      print "r:", r
     
       return r
     
