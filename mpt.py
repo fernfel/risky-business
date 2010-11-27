@@ -1,7 +1,8 @@
 import numpy as np
-import scipy as sp
-import scipy.stats as stats
+#import scipy as sp
+#import scipy.stats as stats
 import copy
+from math import sqrt
 
 class StockModel():
     
@@ -37,38 +38,46 @@ def calculateCorrelation(x, y):
     # Returns the Pearson correlation coefficient for p1 and p2
     def sim_pearson(p1,p2):
       # Get the list of mutually rated items
-      si={}
-      for item in p1: 
-        if item in p2: si[item]=1
-    
+      #si={}
+      #for item in p1: 
+      #  print "item:", item
+      #  if item in p2: 
+      #      si[item]=1
+      #print "si:", si
+
       # if they are no ratings in common, return 0
-      if len(si)==0: return 0
+      #if len(si)==0: return 0
+	  #----if not the same size arrays:
+      if len(p1) != len(p2): return 0
     
       # Sum calculations
-      n=len(si)
+      #n=len(si)
+      n= len(p1)
       
       # Sums of all the preferences
       sum1=sum(p1)
       sum2=sum(p2)
       
       # Sums of the squares
-      sum1Sq=sum([pow(p1[it],2) for it in si])
-      sum2Sq=sum([pow(p2[it],2) for it in si])    
+      sum1Sq=sum([pow(p,2) for p in p1])
+      sum2Sq=sum([pow(p,2) for p in p2])    
       
       # Sum of the products
-      pSum=sum([p1[it]*[p2][it] for it in si])
+      pSum=sum([p1[it]*p2[it] for it in range(n)])
       
       # Calculate r (Pearson score)
-      num=pSum-(sum1*sum2/n)
+      num=pSum-(sum1*sum2/len(p1))
       den=sqrt((sum1Sq-pow(sum1,2)/n)*(sum2Sq-pow(sum2,2)/n))
       if den==0: return 0
     
       r=num/den
+      print "r:", r
     
       return r
     
     if len(x.returns) == len(y.returns):
-        return stats.pearsonr(x.returns, y.returns)
+        #return stats.pearsonr(x.returns, y.returns)
+        return sim_pearson(x.returns, y.returns)
     
     biggerArray = []
     smallerArray = []
@@ -97,7 +106,8 @@ def calculateCorrelation(x, y):
     if len(intersectionPrices) != len(smallerArray):
         intersectionPrices.pop()
     
-    return stats.pearsonr(intersectionPrices, smallerArray)
+    #return stats.pearsonr(intersectionPrices, smallerArray)
+    return sim_pearson(intersectionPrices, smallerArray)
 
 google = StockModel('historicalPrices/google.csv')
 print 'GOOG: ' + str(google.getVol())
