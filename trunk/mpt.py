@@ -30,8 +30,49 @@ class StockModel():
         
 class PortfolioModel():
     
-    def __init__(self, filename):
-        self.test = 'test'
+    def __init__(self):
+        self.stocks = {}
+        
+    def addStock(self, stockTicker, quantity, price):
+        self.stocks[stockTicker] = (quantity, price)
+        
+    def stockWeight(self, ticker):
+        
+        stockAssetValue = 0.0
+        totalAssetValue = 0.0
+        
+        for stockTicker, info in self.stocks.iteritems():
+            quantity, price = info
+            if ticker == stockTicker:
+                stockAssetValue += quantity * price
+            totalAssetValue += quantity * price
+        
+        return (stockAssetValue/totalAssetValue)
+        
+        
+    def variance(self):
+        
+        variance = 0
+        
+        for iTicker in self.stocks.iterkeys():
+            for jTicker in self.stocks.iterkeys():
+                
+                iWeight = self.stockWeight(iTicker)
+                iStockModel = StockModel('historicalPrices/' + iTicker.lower() + '.csv')
+                
+                jWeight = self.stockWeight(jTicker)
+                jStockModel = StockModel('historicalPrices/' + jTicker.lower() + '.csv')
+                
+                correlation = calculateCorrelation(iStockModel, jStockModel)
+                
+                variance += iWeight*jWeight*iStockModel.getVol()*jStockModel.getVol()*correlation
+        
+        return variance
+    
+    def volatility(self):
+        return np.sqrt(self.variance())
+        
+        
 
 def calculateCorrelation(x, y):
     
@@ -100,19 +141,19 @@ def calculateCorrelation(x, y):
             index = y.dates.index(date)
         intersectionPrices.append(biggerArray[index])
     
-    print len(intersectionPrices)
-    print len(smallerArray)
+#    print len(intersectionPrices)
+#    print len(smallerArray)
     if len(intersectionPrices) != len(smallerArray):
         intersectionPrices.pop()
     
     #return stats.pearsonr(intersectionPrices, smallerArray)
     return sim_pearson(intersectionPrices, smallerArray)
 
-google = StockModel('historicalPrices/google.csv')
+google = StockModel('historicalPrices/goog.csv')
 print 'GOOG: ' + str(google.getVol())
 print len(google.returns)
 
-autodesk = StockModel('historicalPrices/autodesk.csv')
+autodesk = StockModel('historicalPrices/adsk.csv')
 print 'Autodesk: ' + str(autodesk.getVol())
 print len(autodesk.returns)
 
@@ -122,3 +163,10 @@ print len(cocaCola.returns)
 
 print calculateCorrelation(google, autodesk)
 print calculateCorrelation(cocaCola, autodesk)
+
+portfolio = PortfolioModel()
+portfolio.addStock('KO', 100, 69.21)
+portfolio.addStock('GOOG', 100, 290.21)
+portfolio.addStock('ADSK', 100, 9.21)
+print 'Stock Weight of KO: ' + str(portfolio.stockWeight('KO'))
+print 'Portfolio Volatility: ' + str(portfolio.volatility()) 
