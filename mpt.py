@@ -55,17 +55,20 @@ class PortfolioModel():
         variance = 0
         
         for iTicker in self.stocks.iterkeys():
+            
+            iWeight = self.stockWeight(iTicker)
+            iStockModel = StockModel('historicalPrices/' + iTicker.lower() + '.csv')
+            iVol = iStockModel.getVol()
+            
             for jTicker in self.stocks.iterkeys():
-                
-                iWeight = self.stockWeight(iTicker)
-                iStockModel = StockModel('historicalPrices/' + iTicker.lower() + '.csv')
-                
+
                 jWeight = self.stockWeight(jTicker)
                 jStockModel = StockModel('historicalPrices/' + jTicker.lower() + '.csv')
+                jVol = jStockModel.getVol()
                 
                 correlation = calculateCorrelation(iStockModel, jStockModel)
                 
-                variance += iWeight*jWeight*iStockModel.getVol()*jStockModel.getVol()*correlation
+                variance += iWeight*jWeight*iVol*jVol*correlation
         
         return variance
     
