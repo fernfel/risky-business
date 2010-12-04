@@ -2,7 +2,9 @@ import numpy as np
 #import scipy as sp
 #import scipy.stats as stats
 import copy
-from math import sqrt
+import math
+
+# todo: need more caching
 
 class StockModel():
     
@@ -17,16 +19,20 @@ class StockModel():
                 self.historicalPrices.append(float(adjClose))
         f.close()
         self.returns = np.array(self.calculateReturns(self.historicalPrices))
+        
+        self.updateVol()
                
     def calculateReturns(self, historicalPrices):
         dayToDayReturns = []
         for i in range(len(historicalPrices)-1):
-            percReturn = (historicalPrices[i+1] - historicalPrices[i]) / historicalPrices[i]
+#            percReturn = (historicalPrices[i+1] - historicalPrices[i]) / historicalPrices[i]
+            percReturn = math.log(historicalPrices[i+1]/historicalPrices[i])
             dayToDayReturns.append(percReturn)
         return dayToDayReturns
-        
-    def getVol(self):
-        return self.returns.std()
+    
+    def updateVol(self):
+        self.dailyVol = self.returns.std()
+        self.annualVol = self.dailyVol*math.sqrt(252)
         
 class PortfolioModel():
     
@@ -43,6 +49,11 @@ class PortfolioModel():
         
         for stockTicker, info in self.stocks.iteritems():
             quantity, price = info
+            
+            # grab latest price
+            model = StockModel('historicalPrices/' + stockTicker.lower() + '.csv')
+            price = model.historicalPrices[0] 
+            
             if ticker == stockTicker:
                 stockAssetValue += quantity * price
             totalAssetValue += quantity * price
@@ -58,13 +69,13 @@ class PortfolioModel():
             
             iWeight = self.stockWeight(iTicker)
             iStockModel = StockModel('historicalPrices/' + iTicker.lower() + '.csv')
-            iVol = iStockModel.getVol()
+            iVol = iStockModel.dailyVol
             
             for jTicker in self.stocks.iterkeys():
 
                 jWeight = self.stockWeight(jTicker)
                 jStockModel = StockModel('historicalPrices/' + jTicker.lower() + '.csv')
-                jVol = jStockModel.getVol()
+                jVol = jStockModel.dailyVol
                 
                 correlation = calculateCorrelation(iStockModel, jStockModel)
                 
@@ -72,10 +83,11 @@ class PortfolioModel():
         
         return variance
     
-    def volatility(self):
+    def dailyVol(self):
         return np.sqrt(self.variance())
-        
-        
+    
+    def annualizedVol(self):
+        return math.sqrt(252) * self.dailyVol()
 
 def calculateCorrelation(x, y):
     
@@ -111,7 +123,7 @@ def calculateCorrelation(x, y):
       
       # Calculate r (Pearson score)
       num=pSum-(sum1*sum2/len(p1))
-      den=sqrt((sum1Sq-pow(sum1,2)/n)*(sum2Sq-pow(sum2,2)/n))
+      den= math.sqrt((sum1Sq-pow(sum1,2)/n)*(sum2Sq-pow(sum2,2)/n))
       if den==0: return 0
     
       r=num/den
@@ -143,33 +155,28 @@ def calculateCorrelation(x, y):
         elif len(x.returns) < len(y.returns):
             index = y.dates.index(date)
         intersectionPrices.append(biggerArray[index])
-    
-#    print len(intersectionPrices)
-#    print len(smallerArray)
+        
     if len(intersectionPrices) != len(smallerArray):
         intersectionPrices.pop()
     
     #return stats.pearsonr(intersectionPrices, smallerArray)
     return sim_pearson(intersectionPrices, smallerArray)
 
+
 google = StockModel('historicalPrices/goog.csv')
-print 'GOOG: ' + str(google.getVol())
-print len(google.returns)
+print 'GOOG: ' + str(google.dailyVol)
+print 'GOOG: ' + str(google.annualVol)
 
 autodesk = StockModel('historicalPrices/adsk.csv')
-print 'Autodesk: ' + str(autodesk.getVol())
-print len(autodesk.returns)
+print 'Autodesk: ' + str(autodesk.dailyVol)
 
 cocaCola = StockModel('historicalPrices/ko.csv')
-print 'CocaCola: ' + str(cocaCola.getVol())
-print len(cocaCola.returns)
-
-print calculateCorrelation(google, autodesk)
-print calculateCorrelation(cocaCola, autodesk)
+print 'CocaCola: ' + str(cocaCola.dailyVol)
 
 portfolio = PortfolioModel()
-portfolio.addStock('KO', 100, 69.21)
+portfolio.addStock('KO', 1000, 69.21)
 portfolio.addStock('GOOG', 100, 290.21)
-portfolio.addStock('ADSK', 100, 9.21)
+portfolio.addStock('ADSK', 1000, 9.21)
 print 'Stock Weight of KO: ' + str(portfolio.stockWeight('KO'))
-print 'Portfolio Volatility: ' + str(portfolio.volatility()) 
+print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
+print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol()) 
