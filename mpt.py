@@ -30,6 +30,14 @@ class StockModel():
             dayToDayReturns.append(percReturn)
         return dayToDayReturns
     
+    def expectedReturn(self):
+        beta = 1
+        # yield from 10 yr treasury
+        riskFreeRateOfInterest = 0.03
+        expectedReturnMarket = 0.11
+        
+        
+    
     def updateVol(self):
         self.dailyVol = self.returns.std()
         self.annualVol = self.dailyVol*math.sqrt(252)
@@ -38,27 +46,31 @@ class PortfolioModel():
     
     def __init__(self):
         self.stocks = {}
+        self.stockWeights = {}
         
     def addStock(self, stockTicker, quantity, price):
         self.stocks[stockTicker] = (quantity, price)
+        self.calculateStockWeight()
         
-    def stockWeight(self, ticker):
+    def calculateStockWeight(self):
         
-        stockAssetValue = 0.0
-        totalAssetValue = 0.0
+        for ticker in self.stocks.iterkeys():  
         
-        for stockTicker, info in self.stocks.iteritems():
-            quantity, price = info
+            stockAssetValue = 0.0
+            totalAssetValue = 0.0
             
-            # grab latest price
-            model = StockModel(stockTicker)
-            price = model.historicalPrices[0] 
+            for stockTicker, info in self.stocks.iteritems():
+                quantity, price = info
+                
+                # grab latest price
+                model = StockModel(stockTicker)
+                price = model.historicalPrices[0] 
+                
+                if ticker == stockTicker:
+                    stockAssetValue += quantity * price
+                totalAssetValue += quantity * price
             
-            if ticker == stockTicker:
-                stockAssetValue += quantity * price
-            totalAssetValue += quantity * price
-        
-        return (stockAssetValue/totalAssetValue)
+            self.stockWeights[ticker] = (stockAssetValue/totalAssetValue)
         
         
     def variance(self):
@@ -67,13 +79,13 @@ class PortfolioModel():
         
         for iTicker in self.stocks.iterkeys():
             
-            iWeight = self.stockWeight(iTicker)
+            iWeight = self.stockWeights[iTicker]
             iStockModel = StockModel(iTicker)
             iVol = iStockModel.dailyVol
             
             for jTicker in self.stocks.iterkeys():
 
-                jWeight = self.stockWeight(jTicker)
+                jWeight = self.stockWeights[jTicker]
                 jStockModel = StockModel(jTicker.lower())
                 jVol = jStockModel.dailyVol
                 
@@ -88,6 +100,9 @@ class PortfolioModel():
     
     def annualizedVol(self):
         return math.sqrt(252) * self.dailyVol()
+    
+    def efficientFrontier(self):
+        return 
 
 def calculateCorrelation(x, y):
     
@@ -193,4 +208,4 @@ if __name__ == "__main__":
 	portfolio.addStock('ADSK', 1000, 9.21)
 	print 'Stock Weight of KO: ' + str(portfolio.stockWeight('KO'))
 	print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
-	print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol()) 
+	print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol()) >>>>>>> .r21
