@@ -161,20 +161,36 @@ def calculateCorrelation(x, y):
     return sim_pearson(intersectionPrices, smallerArray)
 
 
-google = StockModel('GOOG')
-print 'GOOG: ' + str(google.dailyVol)
-print 'GOOG: ' + str(google.annualVol)
+if __name__ == "__main__":
+#	tickers = set()
+#	ticker = ""
+#	print "When you have finished populating your portfolio, type 'done'"
+#	while ticker.lower() != "done":
+#		ticker = raw_input("Add a ticker to your portfolio")
+#		if ticker not in tickers: # TODO: make sure its in S&P also
+#			tickers.add(ticker)
+#	
+#	portfolio = PortfolioModel()
+#	for ticker in tickers:
+#		temp = StockModel(ticker)
+#		print ticker + ': ' + str(temp.dailyVol)
+#		print ticker + ': ' + str(temp.annualVol)	
+#		print "" 
 
-autodesk = StockModel('ADSK')
-print 'Autodesk: ' + str(autodesk.dailyVol)
-
-cocaCola = StockModel('KO')
-print 'CocaCola: ' + str(cocaCola.dailyVol)
-
-portfolio = PortfolioModel()
-portfolio.addStock('KO', 1000, 69.21)
-portfolio.addStock('GOOG', 100, 290.21)
-portfolio.addStock('ADSK', 1000, 9.21)
-print 'Stock Weight of KO: ' + str(portfolio.stockWeight('KO'))
-print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
-print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol()) 
+	google = StockModel('GOOG')
+	print 'GOOG: ' + str(google.dailyVol)
+	print 'GOOG: ' + str(google.annualVol)
+	
+	autodesk = StockModel('ADSK')
+	print 'Autodesk: ' + str(autodesk.dailyVol)
+	
+	cocaCola = StockModel('KO')
+	print 'CocaCola: ' + str(cocaCola.dailyVol)
+	
+	portfolio = PortfolioModel()
+	portfolio.addStock('KO', 1000, 69.21)
+	portfolio.addStock('GOOG', 100, 290.21)
+	portfolio.addStock('ADSK', 1000, 9.21)
+	print 'Stock Weight of KO: ' + str(portfolio.stockWeight('KO'))
+	print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
+	print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol()) 
