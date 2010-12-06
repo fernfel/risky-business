@@ -11,7 +11,7 @@ class StockModel():
     def __init__(self, filename):
         self.dates = []
         self.historicalPrices = []
-        f = open(filename)
+        f = open('data/' + filename + '.csv')
         for line in f:        
             date,openPrice,highPrice,lowPrice,closePrice,volume,adjClose = line.strip().split(',')
             if date.lower() != "date":
@@ -163,14 +163,14 @@ def calculateCorrelation(x, y):
     return sim_pearson(intersectionPrices, smallerArray)
 
 
-google = StockModel('historicalPrices/goog.csv')
+google = StockModel('GOOG')
 print 'GOOG: ' + str(google.dailyVol)
 print 'GOOG: ' + str(google.annualVol)
 
-autodesk = StockModel('historicalPrices/adsk.csv')
+autodesk = StockModel('ADSK')
 print 'Autodesk: ' + str(autodesk.dailyVol)
 
-cocaCola = StockModel('historicalPrices/ko.csv')
+cocaCola = StockModel('KO')
 print 'CocaCola: ' + str(cocaCola.dailyVol)
 
 portfolio = PortfolioModel()
