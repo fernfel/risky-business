@@ -51,7 +51,7 @@ class PortfolioModel():
             quantity, price = info
             
             # grab latest price
-            model = StockModel('historicalPrices/' + stockTicker.lower() + '.csv')
+            model = StockModel(stockTicker)
             price = model.historicalPrices[0] 
             
             if ticker == stockTicker:
@@ -68,13 +68,13 @@ class PortfolioModel():
         for iTicker in self.stocks.iterkeys():
             
             iWeight = self.stockWeight(iTicker)
-            iStockModel = StockModel('historicalPrices/' + iTicker.lower() + '.csv')
+            iStockModel = StockModel(iTicker)
             iVol = iStockModel.dailyVol
             
             for jTicker in self.stocks.iterkeys():
 
                 jWeight = self.stockWeight(jTicker)
-                jStockModel = StockModel('historicalPrices/' + jTicker.lower() + '.csv')
+                jStockModel = StockModel(jTicker.lower())
                 jVol = jStockModel.dailyVol
                 
                 correlation = calculateCorrelation(iStockModel, jStockModel)
@@ -154,10 +154,8 @@ def calculateCorrelation(x, y):
             index = x.dates.index(date)
         elif len(x.returns) < len(y.returns):
             index = y.dates.index(date)
-        intersectionPrices.append(biggerArray[index])
-        
-    if len(intersectionPrices) != len(smallerArray):
-        intersectionPrices.pop()
+        if index < len(biggerArray):
+            intersectionPrices.append(biggerArray[index])
     
     #return stats.pearsonr(intersectionPrices, smallerArray)
     return sim_pearson(intersectionPrices, smallerArray)
