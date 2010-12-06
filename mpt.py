@@ -208,4 +208,4 @@ if __name__ == "__main__":
 	portfolio.addStock('ADSK', 1000, 9.21)
 	print 'Stock Weight of KO: ' + str(portfolio.stockWeight('KO'))
 	print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
-	print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol()) >>>>>>> .r21
+	print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol())
