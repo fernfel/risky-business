@@ -191,6 +191,7 @@ if __name__ == "__main__":
 #		print ticker + ': ' + str(temp.dailyVol)
 #		print ticker + ': ' + str(temp.annualVol)	
 #		print "" 
+#		portfolio.addStock(ticker, 1000, price???)
 
 	google = StockModel('GOOG')
 	print 'GOOG: ' + str(google.dailyVol)
