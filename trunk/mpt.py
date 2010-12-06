@@ -30,13 +30,35 @@ class StockModel():
             dayToDayReturns.append(percReturn)
         return dayToDayReturns
     
+    def calculateBeta(self):
+        sp500 = StockModel('S+P')
+        sp500Returns, returns = makeSameSizedArray(sp500, self)
+        
+        sp500Returns = np.array(sp500Returns)
+        returns = np.array(returns)
+        
+        sp500Mean = sp500Returns.mean()
+        stockMean = returns.mean()
+        covariance = 0.0
+        
+        for i in range(len(sp500Returns)):
+            sp500Dev = sp500Returns[i] - sp500Mean
+            stockDev = returns[i] - stockMean
+            
+            covariance += sp500Dev * stockDev / len(sp500Returns)
+        
+        beta = covariance / np.var(sp500Returns)
+        
+        return beta
+        
     def expectedReturn(self):
-        beta = 1
+        beta = self.calculateBeta()
         # yield from 10 yr treasury
         riskFreeRateOfInterest = 0.03
         expectedReturnMarket = 0.11
         
-        
+        expectedReturn = riskFreeRateOfInterest + beta*(expectedReturnMarket - riskFreeRateOfInterest)
+        return expectedReturn
     
     def updateVol(self):
         self.dailyVol = self.returns.std()
@@ -102,6 +124,9 @@ class PortfolioModel():
         return math.sqrt(252) * self.dailyVol()
     
     def efficientFrontier(self):
+        q = 0.8
+        
+        portReturnVariance - q*(returnsT * weightMatrix)
         return 
 
 def calculateCorrelation(x, y):
@@ -149,6 +174,12 @@ def calculateCorrelation(x, y):
         #return stats.pearsonr(x.returns, y.returns)
         return sim_pearson(x.returns, y.returns)
     
+    intersectionPrices, smallerArray = makeSameSizedArray(x, y)
+    
+    #return stats.pearsonr(intersectionPrices, smallerArray)
+    return sim_pearson(intersectionPrices, smallerArray)
+
+def makeSameSizedArray(x, y):
     biggerArray = []
     smallerArray = []
     intersectionDates = []
@@ -162,6 +193,8 @@ def calculateCorrelation(x, y):
         biggerArray = copy.deepcopy(y.returns).tolist()
         smallerArray = copy.deepcopy(x.returns).tolist()
         intersectionDates = [val for val in y.dates if val in x.dates]
+    else:
+        return (x.returns, y.returns)
     
     for date in intersectionDates:
         index = 0
@@ -172,9 +205,10 @@ def calculateCorrelation(x, y):
         if index < len(biggerArray):
             intersectionPrices.append(biggerArray[index])
     
-    #return stats.pearsonr(intersectionPrices, smallerArray)
-    return sim_pearson(intersectionPrices, smallerArray)
-
+    if len(intersectionPrices) > len(smallerArray):
+        intersectionPrices.pop()
+    
+    return (intersectionPrices, smallerArray)
 
 if __name__ == "__main__":
 #	tickers = set()
@@ -191,22 +225,27 @@ if __name__ == "__main__":
 #		print ticker + ': ' + str(temp.dailyVol)
 #		print ticker + ': ' + str(temp.annualVol)	
 #		print "" 
-#		portfolio.addStock(ticker, 1000, price???)
 
-	google = StockModel('GOOG')
-	print 'GOOG: ' + str(google.dailyVol)
-	print 'GOOG: ' + str(google.annualVol)
-	
-	autodesk = StockModel('ADSK')
-	print 'Autodesk: ' + str(autodesk.dailyVol)
-	
-	cocaCola = StockModel('KO')
-	print 'CocaCola: ' + str(cocaCola.dailyVol)
-	
-	portfolio = PortfolioModel()
-	portfolio.addStock('KO', 1000, 69.21)
-	portfolio.addStock('GOOG', 100, 290.21)
-	portfolio.addStock('ADSK', 1000, 9.21)
-	print 'Stock Weight of KO: ' + str(portfolio.stockWeight('KO'))
-	print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
-	print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol())
+    google = StockModel('GOOG')
+    print 'GOOG: ' + str(google.dailyVol)
+    print 'GOOG: ' + str(google.annualVol)
+    print google.calculateBeta()
+    print google.expectedReturn()
+    
+    autodesk = StockModel('ADSK')
+    print 'Autodesk: ' + str(autodesk.dailyVol)
+    print autodesk.calculateBeta()
+    print autodesk.expectedReturn()
+    
+    cocaCola = StockModel('KO')
+    print 'CocaCola: ' + str(cocaCola.dailyVol)
+    print cocaCola.calculateBeta()
+    print cocaCola.expectedReturn()
+    
+    portfolio = PortfolioModel()
+    portfolio.addStock('KO', 1000, 69.21)
+    portfolio.addStock('GOOG', 100, 290.21)
+    portfolio.addStock('ADSK', 1000, 9.21)
+    print 'Stock Weight of KO: ' + str(portfolio.stockWeights['KO'])
+    print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
+    print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol())
