@@ -8,10 +8,11 @@ import math
 
 class StockModel():
     
-    def __init__(self, filename):
+    def __init__(self, ticker):
+        self.ticker = ticker
         self.dates = []
         self.historicalPrices = []
-        f = open('data/' + filename + '.csv')
+        f = open('data/' + ticker + '.csv')
         for line in f:        
             date,openPrice,highPrice,lowPrice,closePrice,volume,adjClose = line.strip().split(',')
             if date.lower() != "date":
@@ -125,8 +126,6 @@ class PortfolioModel():
     
     def efficientFrontier(self):
         q = 0.8
-        
-        portReturnVariance - q*(returnsT * weightMatrix)
         return 
 
 def calculateCorrelation(x, y):
@@ -210,6 +209,40 @@ def makeSameSizedArray(x, y):
     
     return (intersectionPrices, smallerArray)
 
+def euclideanDistance(p1, p2):
+    
+    distance = 0
+    for i in range(len(p1)):
+        try:
+            distance += math.pow((p1[i] - p2[i]), 2)
+        except KeyError:
+            print p1
+            
+    distance = math.sqrt(distance)
+    
+    return distance
+
+def gaussianWeight(distance, sigma=2): 
+    
+    distance = math.pow(math.e, -distance/2*sigma**2)
+    return distance
+
+def knn(dataset, p1, k, weightFunc=gaussianWeight, similiarity=euclideanDistance):
+    
+    # reorder the training set based on distance to p1
+    distances = []
+    for model in dataset:
+        if model.ticker != p1.ticker:
+            tuple = (similiarity([p1.annualVol, p1.expectedReturn()], [model.annualVol, model.expectedReturn()]), model.ticker)
+            distances.append(tuple)
+    distances.sort()
+    
+    if k > len(dataset):
+        k = len(dataset)
+        
+    recommendedStocks = distances[0:k]
+    return recommendedStocks
+
 if __name__ == "__main__":
 #	tickers = set()
 #	ticker = ""
@@ -229,23 +262,32 @@ if __name__ == "__main__":
     google = StockModel('GOOG')
     print 'GOOG: ' + str(google.dailyVol)
     print 'GOOG: ' + str(google.annualVol)
-    print google.calculateBeta()
-    print google.expectedReturn()
+#    print google.calculateBeta()
+#    print google.expectedReturn()
     
     autodesk = StockModel('ADSK')
     print 'Autodesk: ' + str(autodesk.dailyVol)
-    print autodesk.calculateBeta()
-    print autodesk.expectedReturn()
+#    print autodesk.calculateBeta()
+#    print autodesk.expectedReturn()
     
     cocaCola = StockModel('KO')
     print 'CocaCola: ' + str(cocaCola.dailyVol)
-    print cocaCola.calculateBeta()
-    print cocaCola.expectedReturn()
+#    print cocaCola.calculateBeta()
+#    print cocaCola.expectedReturn()
     
-    portfolio = PortfolioModel()
-    portfolio.addStock('KO', 1000, 69.21)
-    portfolio.addStock('GOOG', 100, 290.21)
-    portfolio.addStock('ADSK', 1000, 9.21)
-    print 'Stock Weight of KO: ' + str(portfolio.stockWeights['KO'])
-    print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
-    print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol())
+#    portfolio = PortfolioModel()
+#    portfolio.addStock('KO', 1000, 69.21)
+#    portfolio.addStock('GOOG', 100, 290.21)
+#    portfolio.addStock('ADSK', 1000, 9.21)
+#    print 'Stock Weight of KO: ' + str(portfolio.stockWeights['KO'])
+#    print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
+#    print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol())
+    
+    ford = StockModel('F')
+    nike = StockModel('NKE')
+    microsoft = StockModel('MSFT')
+    citi = StockModel('C')
+    
+    dataset = [google, cocaCola, autodesk, ford, nike, microsoft, citi]
+    print knn(dataset, citi, 5)
+    
