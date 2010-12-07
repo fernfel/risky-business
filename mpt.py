@@ -5,6 +5,7 @@ import copy
 import math
 
 # todo: need more caching
+stockModelCache = dict()
 
 class StockModel():
     
@@ -25,8 +26,9 @@ class StockModel():
      
         f.close()
         self.returns = np.array(self.calculateReturns(self.historicalPrices))
-        
         self.updateVol()
+        
+        stockModelCache[self.ticker] = self
                
     def calculateReturns(self, historicalPrices):
         dayToDayReturns = []
@@ -35,30 +37,9 @@ class StockModel():
             percReturn = math.log(historicalPrices[i+1]/historicalPrices[i])
             dayToDayReturns.append(percReturn)
         return dayToDayReturns
-    
-    def calculateBeta(self):
-        sp500 = StockModel('S+P')
-        sp500Returns, returns = makeSameSizedArray(sp500, self)
-        
-        sp500Returns = np.array(sp500Returns)
-        returns = np.array(returns)
-        
-        sp500Mean = sp500Returns.mean()
-        stockMean = returns.mean()
-        covariance = 0.0
-        
-        for i in range(len(sp500Returns)):
-            sp500Dev = sp500Returns[i] - sp500Mean
-            stockDev = returns[i] - stockMean
-            
-            covariance += sp500Dev * stockDev / len(sp500Returns)
-        
-        beta = covariance / np.var(sp500Returns)
-        
-        return beta
         
     def expectedReturn(self):
-        beta = self.calculateBeta()
+        beta = self.beta
         # yield from 10 yr treasury
         riskFreeRateOfInterest = 0.03
         expectedReturnMarket = 0.11
