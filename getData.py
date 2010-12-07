@@ -30,7 +30,7 @@ if __name__ == "__main__":
 		file.close()
 		
 	# Get S&P 500 Index historical data
-	ticker = ^GSPC
+	ticker = "^GSPC"
 	url = "http://ichart.finance.yahoo.com/table.csv?s="+ticker+"&a=00&b=1&c=1980&d=11&e=7&f=2010&g=d&ignore=.csv"
 	file = open("data/S+P.csv", 'w')
 	file.write(data.read())
