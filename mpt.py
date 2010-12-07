@@ -13,11 +13,16 @@ class StockModel():
         self.dates = []
         self.historicalPrices = []
         f = open('data/' + ticker + '.csv')
-        for line in f:        
-            date,openPrice,highPrice,lowPrice,closePrice,volume,adjClose = line.strip().split(',')
-            if date.lower() != "date":
-                self.dates.append(date)
-                self.historicalPrices.append(float(adjClose))
+        self.beta = f.readLine()
+        x = 0
+        for line in f:
+        	if x > 1:
+				date,openPrice,highPrice,lowPrice,closePrice,volume,adjClose = line.strip().split(',')
+				#if date.lower() != "date":
+				self.dates.append(date)
+				self.historicalPrices.append(float(adjClose))
+			x+=1                
+     
         f.close()
         self.returns = np.array(self.calculateReturns(self.historicalPrices))
         
