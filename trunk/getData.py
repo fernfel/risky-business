@@ -16,17 +16,22 @@ if __name__ == "__main__":
 	
 	for ticker in tickerList:
 		print ticker
-		url = "http://ichart.finance.yahoo.com/table.csv?s="+ticker+"&a=00&b=1&c=1980&d=11&e=6&f=2010&g=d&ignore=.csv"
+		url = "http://ichart.finance.yahoo.com/table.csv?s="+ticker+"&a=00&b=1&c=1980&d=11&e=7&f=2010&g=d&ignore=.csv"
 		data = urllib2.urlopen(url)
 		url2 = "http://finance.yahoo.com/q/ks?s="+ticker+"+Key+Statistics"
 		page = urllib2.urlopen(url2)
 		soup = BeautifulSoup(page)
-		data = soup.findAll("td", "yfnc_tabledata1")
-		beta =  data[31].text
-		
+		tags = soup.findAll("td", "yfnc_tabledata1")
+		beta =  tags[31].text
 		
 		file = open("data/"+ticker+'.csv', 'w')
-		
 		file.write(beta)
 		file.write(data.read())
 		file.close()
+		
+	# Get S&P 500 Index historical data
+	ticker = ^GSPC
+	url = "http://ichart.finance.yahoo.com/table.csv?s="+ticker+"&a=00&b=1&c=1980&d=11&e=7&f=2010&g=d&ignore=.csv"
+	file = open("data/S+P.csv", 'w')
+	file.write(data.read())
+	file.close()
