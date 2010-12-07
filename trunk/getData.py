@@ -25,7 +25,7 @@ if __name__ == "__main__":
 		beta =  tags[31].text
 		
 		file = open("data/"+ticker+'.csv', 'w')
-		file.write(beta)
+		file.write(beta + "\n")
 		file.write(data.read())
 		file.close()
 		
