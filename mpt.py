@@ -72,7 +72,10 @@ class PortfolioModel():
         self.stockWeights = {}
         
     def addStock(self, stockTicker, quantity, price):
-        self.stocks[stockTicker] = (quantity, price)
+        if stockTicker in self.stocks:
+            self.stocks[stockTicker] += quantity
+        else:
+            self.stocks[stockTicker] = quantity
         self.calculateStockWeight()
         
     def calculateStockWeight(self):
@@ -83,7 +86,7 @@ class PortfolioModel():
             totalAssetValue = 0.0
             
             for stockTicker, info in self.stocks.iteritems():
-                quantity, price = info
+                quantity = info
                 
                 # grab latest price
                 model = StockModel(stockTicker)
@@ -227,14 +230,15 @@ def gaussianWeight(distance, sigma=2):
     distance = math.pow(math.e, -distance/2*sigma**2)
     return distance
 
-def knn(dataset, p1, k, weightFunc=gaussianWeight, similiarity=euclideanDistance):
+def knn(dataset, p1, k, idealVol, weightFunc=gaussianWeight, similiarity=euclideanDistance):
     
     # reorder the training set based on distance to p1
     distances = []
     for model in dataset:
-        if model.ticker != p1.ticker:
-            tuple = (similiarity([p1.annualVol, p1.expectedReturn()], [model.annualVol, model.expectedReturn()]), model.ticker)
-            distances.append(tuple)
+        p2 = copy.deepcopy(p1)
+        p2.addStock(model.ticker, 100, 100)
+        tuple = (similiarity([idealVol], [p2.annualizedVol()]), model.ticker)
+        distances.append(tuple)
     distances.sort()
     
     if k > len(dataset):
@@ -275,10 +279,10 @@ if __name__ == "__main__":
 #    print cocaCola.calculateBeta()
 #    print cocaCola.expectedReturn()
     
-#    portfolio = PortfolioModel()
-#    portfolio.addStock('KO', 1000, 69.21)
-#    portfolio.addStock('GOOG', 100, 290.21)
-#    portfolio.addStock('ADSK', 1000, 9.21)
+    portfolio = PortfolioModel()
+    portfolio.addStock('KO', 1000, 69.21)
+    portfolio.addStock('GOOG', 100, 290.21)
+    portfolio.addStock('ADSK', 1000, 9.21)
 #    print 'Stock Weight of KO: ' + str(portfolio.stockWeights['KO'])
 #    print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
 #    print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol())
@@ -289,5 +293,4 @@ if __name__ == "__main__":
     citi = StockModel('C')
     
     dataset = [google, cocaCola, autodesk, ford, nike, microsoft, citi]
-    print knn(dataset, citi, 5)
-    
+    print knn(dataset, portfolio, 5, 0.20)
