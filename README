@@ -1,4 +1,10 @@
 README
 
 Python 2.7 on OS X 10.6 doesn't install with a working version of Tkinter (32 vs 64 bit issue).
--Problem solved by upgrading to python 2.7.1 with comes with working Tkinter version.
+-Problem solved by upgrading to python 2.7.1 with comes with working Tkinter version 8.5.
+
+In python 3.X, ttk is part of Tkinter meaning that import statements must be changed to 
+"from tkinter import ttk". Notice also, that for this python version, tkinter is lowercase.
+
+Is there a good way to make an executable to include all of these dependencies? 
+
