@@ -18,6 +18,7 @@ class GUI:
 		tabs = ttk.Notebook(frame)
 		tabs.grid(column=1, row=1, sticky=(N, W))
 		f1 = ttk.Frame(tabs); # first page, which would get widgets gridded into it
+		# INSERT MATPLOTLIB GRAPHS HERE???
 		f2 = ttk.Frame(tabs); # second page
 		tabs.add(f1, text='One')
 		tabs.add(f2, text='Two')
