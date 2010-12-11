@@ -3,6 +3,7 @@ import numpy as np
 #import scipy.stats as stats
 import copy
 import math
+import os, glob
 
 # todo: need more caching
 stockModelCache = dict()
@@ -14,15 +15,20 @@ class StockModel():
         self.dates = []
         self.historicalPrices = []
         f = open('data/' + ticker + '.csv')
-        self.beta = f.readline()
+        self.beta = f.readline().strip()
+        if self.beta == "N/A":
+            self.beta = 1
+        else:
+            self.beta = float(self.beta)
         x = 0
         for line in f:
-            if x > 1:
-                date,openPrice,highPrice,lowPrice,closePrice,volume,adjClose = line.strip().split(',')
-				#if date.lower() != "date":
-                self.dates.append(date)
-                self.historicalPrices.append(float(adjClose))
-            x+=1                
+            if line.strip() != "":
+                if x > 1:
+                    date,openPrice,highPrice,lowPrice,closePrice,volume,adjClose = line.strip().split(',')
+    				#if date.lower() != "date":
+                    self.dates.append(date)
+                    self.historicalPrices.append(float(adjClose))
+                x+=1                
      
         f.close()
         self.returns = np.array(self.calculateReturns(self.historicalPrices))
@@ -34,7 +40,10 @@ class StockModel():
         dayToDayReturns = []
         for i in range(len(historicalPrices)-1):
 #            percReturn = (historicalPrices[i+1] - historicalPrices[i]) / historicalPrices[i]
-            percReturn = math.log(historicalPrices[i+1]/historicalPrices[i])
+            if historicalPrices[i] or historicalPrices[i+1] == 0:
+                percReturn = 0
+            else:
+                percReturn = math.log(historicalPrices[i+1]/historicalPrices[i])
             dayToDayReturns.append(percReturn)
         return dayToDayReturns
         
@@ -83,7 +92,13 @@ class PortfolioModel():
                 totalAssetValue += quantity * price
             
             self.stockWeights[ticker] = (stockAssetValue/totalAssetValue)
+    
+    def expectedReturn(self):
         
+        expectedReturn = 0.0
+        for ticker, weight in self.stockWeights.iteritems():
+            expectedReturn += weight*stockModelCache[ticker].expectedReturn()
+        return expectedReturn
         
     def variance(self):
         
@@ -113,9 +128,40 @@ class PortfolioModel():
     def annualizedVol(self):
         return math.sqrt(252) * self.dailyVol()
     
-    def efficientFrontier(self):
-        q = 0.8
-        return 
+    def covariance(self, s1, s2):
+        s1Returns, s2Returns = makeSameSizedArray(s1, s2)
+        s1Returns = np.array(s1Returns)
+        s2Returns = np.array(s2Returns)
+        covariance = 0.0
+        
+        for i in range(len(s1Returns)):
+            s1 = s1Returns[i] - s1Returns.mean()
+            s2 = s2Returns[i] - s2Returns.mean()
+            
+            covariance += s1 * s2 / len(s1Returns)
+        return covariance
+    
+#    def efficientFrontier(self):
+#        w = np.array(self.stockWeights.values())
+#        R = np.array([stockModelCache[i].expectedReturn() for i in self.stockWeights.keys()])
+#        sigma = []
+#        q = 0.8
+#        
+#        for ticker1 in self.stockWeights.keys():
+#            row = []
+#            for ticker2 in self.stockWeights.keys():
+#                cov = self.covariance(stockModelCache[ticker1], stockModelCache[ticker2])
+#                row.append(cov)
+#            sigma.append(row)
+#        
+#        variance = w.transpose() * sigma * w
+#        portExpectedReturn = q*R.transpose()*w
+#        
+#        print variance
+#        print portExpectedReturn
+#        print variance - portExpectedReturn
+#        
+#        return  
 
 def calculateCorrelation(x, y):
     
@@ -216,14 +262,19 @@ def gaussianWeight(distance, sigma=2):
     distance = math.pow(math.e, -distance/2*sigma**2)
     return distance
 
-def knn(dataset, p1, k, idealVol, weightFunc=gaussianWeight, similiarity=euclideanDistance):
+def knn(dataset, p1, k, idealVol, money, weightFunc=gaussianWeight, similiarity=euclideanDistance):
     
     # reorder the training set based on distance to p1
     distances = []
     for model in dataset:
         p2 = copy.deepcopy(p1)
-        p2.addStock(model.ticker, 100, 100)
-        tuple = (similiarity([idealVol], [p2.annualizedVol()]), model.ticker)
+        
+        # how much money do you have spend?
+        stockPrice = stockModelCache[model.ticker].historicalPrices[0]
+        quantity = int(money/stockPrice)
+        
+        p2.addStock(model.ticker, quantity, stockPrice)
+        tuple = (similiarity([idealVol, p1.expectedReturn()], [p2.annualizedVol(), p2.expectedReturn()]), model.ticker, quantity)
         distances.append(tuple)
     distances.sort()
     
@@ -252,31 +303,36 @@ if __name__ == "__main__":
     google = StockModel('GOOG')
     print 'GOOG: ' + str(google.dailyVol)
     print 'GOOG: ' + str(google.annualVol)
-#    print google.calculateBeta()
-#    print google.expectedReturn()
     
     autodesk = StockModel('ADSK')
     print 'Autodesk: ' + str(autodesk.dailyVol)
-#    print autodesk.calculateBeta()
-#    print autodesk.expectedReturn()
     
     cocaCola = StockModel('KO')
     print 'CocaCola: ' + str(cocaCola.dailyVol)
-#    print cocaCola.calculateBeta()
-#    print cocaCola.expectedReturn()
     
     portfolio = PortfolioModel()
     portfolio.addStock('KO', 1000, 69.21)
     portfolio.addStock('GOOG', 100, 290.21)
     portfolio.addStock('ADSK', 1000, 9.21)
-#    print 'Stock Weight of KO: ' + str(portfolio.stockWeights['KO'])
+    print 'Stock Weight of KO: ' + str(portfolio.stockWeights['KO'])
 #    print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
 #    print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol())
+#    print 'Expected Return: ' + str(portfolio.expectedReturn())
+#    portfolio.efficientFrontier()
     
     ford = StockModel('F')
     nike = StockModel('NKE')
     microsoft = StockModel('MSFT')
     citi = StockModel('C')
     
-    dataset = [google, cocaCola, autodesk, ford, nike, microsoft, citi]
-    print knn(dataset, portfolio, 5, 0.20)
+    dataset = []
+    
+    path = 'data/'
+    for infile in glob.glob( os.path.join(path, '*.csv') ):
+        ticker = infile.split('/')[1].split('.')[0]
+        stockModel = StockModel(ticker)
+        print ticker
+        dataset.append(stockModel)
+    
+#    dataset = [google, cocaCola, autodesk, ford, nike, microsoft, citi]
+#    print knn(dataset, portfolio, 5, 0.20, 500)
