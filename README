@@ -1,0 +1,4 @@
+README
+
+Python 2.7 on OS X 10.6 doesn't install with a working version of Tkinter (32 vs 64 bit issue).
+-Problem solved by upgrading to python 2.7.1 with comes with working Tkinter version.
