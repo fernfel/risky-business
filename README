@@ -8,10 +8,29 @@ In python 3.X, ttk is part of Tkinter meaning that import statements must be cha
 
 Is there a good way to make an executable to include all of these dependencies? 
 
-Companies that have no beta according to Yahoo and Google finance
-CFN
-MJN
-QEP
-
 Companies that have a beta but the script didn't pick it up
 PTV
+
+Companies that have far too little data, either because they haven't been public for at least 5 years or Yahoo Finance didn't find it
+CBS
+CFN
+DFS
+DPS
+FSLR
+LO
+MA
+MJN
+PCS
+PEG
+PM
+PSA
+QEP
+SAI
+SE
+SNI
+TDC
+TWC
+USB
+V
+WU
+WYN
