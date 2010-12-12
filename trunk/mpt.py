@@ -6,36 +6,46 @@ import math
 import os, glob
 import time
 
-# todo: need more caching
-stockModelCache = dict()
+trainingSet = dict()
+testSet = dict()
+
+sp500 = ""
 
 class StockModel():
     
-    def __init__(self, ticker):
+    def __init__(self, ticker, start=0, end=0):
         self.ticker = ticker
         self.dates = []
         self.historicalPrices = []
-        f = open('data/' + ticker + '.csv')
-        self.beta = f.readline().strip()
+        if ticker == "S+P":
+            f = open(ticker + '.csv')
+        else:
+            f = open('data/' + ticker + '.csv')
+        
+        lines = f.readlines()
+        self.beta = lines[0].strip()
         if self.beta == "N/A":
             self.beta = 1
         else:
             self.beta = float(self.beta)
-        x = 1
-        for line in f:
-            if line.strip() != "":
-                if x > 1:
-                    date,openPrice,highPrice,lowPrice,closePrice,volume,adjClose = line.strip().split(',')
-    				#if date.lower() != "date":
-                    self.dates.append(date)
-                    self.historicalPrices.append(float(adjClose))
-                x+=1                
+        
+        lines.pop(0)
+        lines.pop(0)
+        
+        if end == 0:
+            lines = lines[start:]
+        elif start == 0:
+            lines = lines[0:end]
+        
+        for x in range(0, len(lines)):
+            line = lines[x].strip()
+            if line != "":
+                date,openPrice,highPrice,lowPrice,closePrice,volume,adjClose = line.strip().split(',')
+                self.dates.append(date)
+                self.historicalPrices.append(float(adjClose))        
      
         f.close()
-        self.returns = np.array(self.calculateReturns(self.historicalPrices))
-        self.updateVol()
-        
-        stockModelCache[self.ticker] = self
+        self.updateCalculations()
                
     def calculateReturns(self, historicalPrices):
         dayToDayReturns = []
@@ -47,7 +57,26 @@ class StockModel():
                 percReturn = math.log(historicalPrices[i+1]/historicalPrices[i])
             dayToDayReturns.append(percReturn)
         return dayToDayReturns
+    
+    def calculateBeta(self):
         
+        if self.ticker == "S+P": return 1.0
+        
+        sp500Returns, returns = makeSameSizedArray(sp500, self)
+        # number of trading days in a year * 5 years
+        divisionPoint = len(sp500Returns) - 252*5
+        
+        sp500Returns = np.array(sp500Returns[divisionPoint:])
+        returns = np.array(returns[divisionPoint:])
+        
+        sp500Mean = sp500Returns.mean()
+        stockMean = returns.mean()
+        
+        covarianceMatrix = np.cov(sp500Returns, returns)
+        covariance = covarianceMatrix[0][1]
+        
+        beta = covariance / np.var(sp500Returns)
+        return beta    
     def expectedReturn(self):
         beta = self.beta
         # yield from 10 yr treasury
@@ -57,15 +86,18 @@ class StockModel():
         expectedReturn = riskFreeRateOfInterest + beta*(expectedReturnMarket - riskFreeRateOfInterest)
         return expectedReturn
     
-    def updateVol(self):
+    def updateCalculations(self):
+        self.returns = np.array(self.calculateReturns(self.historicalPrices))
         self.dailyVol = self.returns.std()
         self.annualVol = self.dailyVol*math.sqrt(252)
+        self.beta = self.calculateBeta()
         
 class PortfolioModel():
     
-    def __init__(self):
+    def __init__(self, dataset):
         self.stocks = {}
         self.stockWeights = {}
+        self.dataset = dataset
         
     def addStock(self, stockTicker, quantity):
         if stockTicker in self.stocks:
@@ -84,7 +116,7 @@ class PortfolioModel():
                 quantity = info
                 
                 # grab latest price
-                model = stockModelCache[stockTicker]
+                model = self.dataset[stockTicker]
                 price = model.historicalPrices[0] 
                 
                 if ticker == stockTicker:
@@ -97,7 +129,7 @@ class PortfolioModel():
         
         expectedReturn = 0.0
         for ticker, weight in self.stockWeights.iteritems():
-            expectedReturn += weight*stockModelCache[ticker].expectedReturn()
+            expectedReturn += weight*self.dataset[ticker].expectedReturn()
         return expectedReturn
         
     def variance(self):
@@ -109,13 +141,13 @@ class PortfolioModel():
         for iTicker in self.stocks.iterkeys():
             
             iWeight = self.stockWeights[iTicker]
-            iStockModel = stockModelCache[iTicker]
+            iStockModel = self.dataset[iTicker]
             iVol = iStockModel.dailyVol
             
             for jTicker in self.stocks.iterkeys():
 
                 jWeight = self.stockWeights[jTicker]
-                jStockModel = stockModelCache[jTicker]
+                jStockModel = self.dataset[jTicker]
                 jVol = jStockModel.dailyVol
                 
                 start = time.time()
@@ -139,46 +171,11 @@ class PortfolioModel():
     def calculateAnnualizedVol(self):
         return math.sqrt(252) * self.dailyVol()
     
-    def covariance(self, s1, s2):
-        s1Returns, s2Returns = makeSameSizedArray(s1, s2)
-        s1Returns = np.array(s1Returns)
-        s2Returns = np.array(s2Returns)
-        covariance = 0.0
-        
-        for i in range(len(s1Returns)):
-            s1 = s1Returns[i] - s1Returns.mean()
-            s2 = s2Returns[i] - s2Returns.mean()
-            
-            covariance += s1 * s2 / len(s1Returns)
-        return covariance
-    
     def updateStatistics(self):
         self.calculateStockWeight()
         self.dailyVol = self.calculateDailyVol()
         self.annualizedVol = self.dailyVol * math.sqrt(252)
         self.expectedReturn = self.calculateExpectedReturn()
-        
-#    def efficientFrontier(self):
-#        w = np.array(self.stockWeights.values())
-#        R = np.array([stockModelCache[i].expectedReturn() for i in self.stockWeights.keys()])
-#        sigma = []
-#        q = 0.8
-#        
-#        for ticker1 in self.stockWeights.keys():
-#            row = []
-#            for ticker2 in self.stockWeights.keys():
-#                cov = self.covariance(stockModelCache[ticker1], stockModelCache[ticker2])
-#                row.append(cov)
-#            sigma.append(row)
-#        
-#        variance = w.transpose() * sigma * w
-#        portExpectedReturn = q*R.transpose()*w
-#        
-#        print variance
-#        print portExpectedReturn
-#        print variance - portExpectedReturn
-#        
-#        return  
 
 def calculateCorrelation(x, y):
     
@@ -267,15 +264,15 @@ def knn(dataset, p1, k, idealVol, money, weightFunc=gaussianWeight, similiarity=
     
     # reorder the training set based on distance to p1
     distances = []
-    for ticker in dataset:        
+    for ticker, model in dataset:        
         # how much money do you have spend?
-        stockPrice = stockModelCache[ticker].historicalPrices[0]
+        stockPrice = model.historicalPrices[0]
         quantity = int(money/stockPrice)
         if quantity > 0:
             p2 = copy.deepcopy(p1)
             p2.addStock(ticker, quantity)
             p2.updateStatistics()
-            tuple = (similiarity([idealVol, 0.15], [p2.annualizedVol, p2.expectedReturn]), ticker, quantity)
+            tuple = (similiarity([idealVol, 1], [p2.annualizedVol, p2.expectedReturn]), ticker, quantity)
             distances.append(tuple)
     distances.sort()
     
@@ -286,38 +283,47 @@ def knn(dataset, p1, k, idealVol, money, weightFunc=gaussianWeight, similiarity=
     return recommendedStocks
 
 if __name__ == "__main__":
-#	tickers = set()
-#	ticker = ""
-#	print "When you have finished populating your portfolio, type 'done'"
-#	while ticker.lower() != "done":
-#		ticker = raw_input("Add a ticker to your portfolio")
-#		if ticker not in tickers: # TODO: make sure its in S&P also
-#			tickers.add(ticker)
-#	
-#	portfolio = PortfolioModel()
-#	for ticker in tickers:
-#		temp = StockModel(ticker)
-#		print ticker + ': ' + str(temp.dailyVol)
-#		print ticker + ': ' + str(temp.annualVol)	
-#		print "" 
+    
+    sp500 = StockModel('S+P')
     
     idealVol = 0.20
     moneyToSpend = 1000
     k = 5
     
+    start = time.time()
+    
     path = 'data/'
     for infile in glob.glob( os.path.join(path, '*.csv') ):
         ticker = infile.split('/')[1].split('.')[0]
         stockModel = StockModel(ticker)
+        
         years = len(stockModel.historicalPrices)/float(252)
         if years < 5:
             os.remove(infile)
             print 'Removed due to low data: ' + ticker
+            
+        else:
+            # number of trading days in a year * 4 years (fudge factor)
+            divisionPoint = len(stockModel.historicalPrices) - 252*4
+            
+            trainingModel = StockModel(ticker, 0, divisionPoint)
+            trainingSet[ticker] = trainingModel
+            
+            testModel = StockModel(ticker, divisionPoint)
+            testSet[ticker] = testModel
+            
+#            print ticker
+#            print 'training vol (annual): ' + str(trainingModel.annualVol)
+#            print 'test vol (annual): ' + str(testModel.annualVol)
+#            print 'training beta: ' + str(trainingModel.beta)
+#            print 'test beta: ' + str(testModel.beta)
+#            print 'training return (annual): ' + str(trainingModel.expectedReturn())
+#            print 'test return (annual): ' + str(testModel.expectedReturn())
          
     f = open('recommendedPorts.csv', 'w')
     f.write('Ticker,AnnualRisk,ExpReturn\n')
     
-    portfolio = PortfolioModel()
+    portfolio = PortfolioModel(trainingSet)
     portfolio.addStock('KO', 20)
     portfolio.addStock('GOOG', 20)
     portfolio.addStock('ADSK', 20)
@@ -331,32 +337,22 @@ if __name__ == "__main__":
     volGap = idealVol - portfolio.annualizedVol
     thinSP = []
     if volGap > 0:
-        thinSP = [(model.annualVol, ticker) for ticker, model in stockModelCache.iteritems() if model.annualVol > portfolio.annualizedVol]
+        thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol > portfolio.annualizedVol]
     elif volGap < 0:
-        thinSP = [(model.annualVol, ticker) for ticker, model in stockModelCache.iteritems() if model.annualVol < portfolio.annualizedVol]
+        thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol < portfolio.annualizedVol]
     thinSP.sort()
-    dataset = [item[1] for item in thinSP]
+    dataset = [(item[1], item[2]) for item in thinSP]
     
 #    print 'Stock Weight of KO: ' + str(portfolio.stockWeights['KO'])
 #    print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
 #    print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol())
 #    print 'Expected Return: ' + str(portfolio.expectedReturn())
-
-#    google = stockModelCache['GOOG']    
-#    autodesk = stockModelCache['ADSK']   
-#    cocaCola = stockModelCache['KO']
-#    ford = stockModelCache['F']
-#    nike = stockModelCache['NKE']
-#    microsoft = stockModelCache['MSFT']
-#    citi = stockModelCache['C']
-#    
-#    dataset = stockModelCache.keys()
     
     beforeTime = time.time()
     recommendedStocks = knn(dataset, portfolio, k, idealVol, moneyToSpend)
     afterTime = time.time()
     diff = afterTime-beforeTime
-    print 'seconds that have elapsed: ' + str(diff)
+    print 'Seconds it takes for knn to run: ' + str(diff)
     
     print recommendedStocks
     
@@ -368,4 +364,3 @@ if __name__ == "__main__":
         p2.updateStatistics()
         f.write(ticker + ',' + str(p2.annualizedVol) + ',' + str(p2.expectedReturn) + '\n')
     f.close()
-    
