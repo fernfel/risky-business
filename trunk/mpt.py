@@ -304,13 +304,18 @@ if __name__ == "__main__":
     idealVol = 0.20
     moneyToSpend = 1000
     k = 5
-    dataset = []
     
     path = 'data/'
     for infile in glob.glob( os.path.join(path, '*.csv') ):
         ticker = infile.split('/')[1].split('.')[0]
         stockModel = StockModel(ticker)
-        dataset.append(stockModel)
+        years = len(stockModel.historicalPrices)/float(252)
+        if years < 5:
+            os.remove(infile)
+            print 'Removed due to low data: ' + ticker
+         
+    f = open('recommendedPorts.csv', 'w')
+    f.write('Ticker,AnnualRisk,ExpReturn\n')
     
     portfolio = PortfolioModel()
     portfolio.addStock('KO', 20)
@@ -320,6 +325,8 @@ if __name__ == "__main__":
     portfolio.addStock('F', 20)
     portfolio.updateStatistics()
     
+    f.write('None' + ',' + str(portfolio.annualizedVol) + ',' + str(portfolio.expectedReturn) + '\n')
+    
     # applying a heuristic to thin out stocks with volatilites that are higher/lower than what we want it to be
     volGap = idealVol - portfolio.annualizedVol
     thinSP = []
@@ -328,6 +335,7 @@ if __name__ == "__main__":
     elif volGap < 0:
         thinSP = [(model.annualVol, ticker) for ticker, model in stockModelCache.iteritems() if model.annualVol < portfolio.annualizedVol]
     thinSP.sort()
+    dataset = [item[1] for item in thinSP]
     
 #    print 'Stock Weight of KO: ' + str(portfolio.stockWeights['KO'])
 #    print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
@@ -343,10 +351,21 @@ if __name__ == "__main__":
 #    citi = stockModelCache['C']
 #    
 #    dataset = stockModelCache.keys()
-    dataset = [item[1] for item in thinSP]
     
     beforeTime = time.time()
-    print knn(dataset, portfolio, k, idealVol, moneyToSpend)
+    recommendedStocks = knn(dataset, portfolio, k, idealVol, moneyToSpend)
     afterTime = time.time()
     diff = afterTime-beforeTime
     print 'seconds that have elapsed: ' + str(diff)
+    
+    print recommendedStocks
+    
+    for item in recommendedStocks:
+        ticker = item[1]
+        quantity = item[2]
+        p2 = copy.deepcopy(portfolio)
+        p2.addStock(ticker, quantity)
+        p2.updateStatistics()
+        f.write(ticker + ',' + str(p2.annualizedVol) + ',' + str(p2.expectedReturn) + '\n')
+    f.close()
+    
