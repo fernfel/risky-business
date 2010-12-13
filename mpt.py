@@ -25,7 +25,7 @@ class StockModel():
         lines = f.readlines()
         self.beta = lines[0].strip()
         if self.beta == "N/A":
-            self.beta = 1
+            self.beta = 1     # default value if none provided
         else:
             self.beta = float(self.beta)
         
