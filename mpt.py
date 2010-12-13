@@ -5,6 +5,7 @@ import copy
 import math
 import os, glob
 import time
+import random
 
 trainingSet = dict()
 testSet = dict()
@@ -97,7 +98,7 @@ class PortfolioModel():
     def __init__(self, dataset):
         self.stocks = {}
         self.stockWeights = {}
-        self.dataset = dataset
+        self.dataset = dataset    
         
     def addStock(self, stockTicker, quantity):
         if stockTicker in self.stocks:
@@ -168,13 +169,10 @@ class PortfolioModel():
     def calculateDailyVol(self):
         return np.sqrt(self.variance())
     
-    def calculateAnnualizedVol(self):
-        return math.sqrt(252) * self.dailyVol()
-    
     def updateStatistics(self):
         self.calculateStockWeight()
         self.dailyVol = self.calculateDailyVol()
-        self.annualizedVol = self.dailyVol * math.sqrt(252)
+        self.annualVol = self.dailyVol * math.sqrt(252)
         self.expectedReturn = self.calculateExpectedReturn()
 
 def calculateCorrelation(x, y):
@@ -245,6 +243,13 @@ def makeSameSizedArray(x, y):
     
     return (cutArray, smallArray)
 
+def copyPortfolio(p1, dataset):
+    
+    p2 = PortfolioModel(dataset)
+    p2.stocks = copy.deepcopy(p1.stocks)
+    
+    return p2
+
 def euclideanDistance(p1, p2):
     
     distance = 0
@@ -260,7 +265,7 @@ def gaussianWeight(distance, sigma=2):
     distance = math.pow(math.e, -distance/2*sigma**2)
     return distance
 
-def knn(dataset, p1, k, idealVol, money, weightFunc=gaussianWeight, similiarity=euclideanDistance):
+def knn(dataset, p1, k, idealVol, idealReturn, money, weightFunc=gaussianWeight, similiarity=euclideanDistance):
     
     # reorder the training set based on distance to p1
     distances = []
@@ -269,10 +274,10 @@ def knn(dataset, p1, k, idealVol, money, weightFunc=gaussianWeight, similiarity=
         stockPrice = model.historicalPrices[0]
         quantity = int(money/stockPrice)
         if quantity > 0:
-            p2 = copy.deepcopy(p1)
+            p2 = copyPortfolio(p1, trainingSet)
             p2.addStock(ticker, quantity)
             p2.updateStatistics()
-            tuple = (similiarity([idealVol, 1], [p2.annualizedVol, p2.expectedReturn]), ticker, quantity)
+            tuple = (similiarity([idealVol, idealReturn], [p2.annualVol, p2.expectedReturn]), ticker, quantity)
             distances.append(tuple)
     distances.sort()
     
@@ -282,11 +287,59 @@ def knn(dataset, p1, k, idealVol, money, weightFunc=gaussianWeight, similiarity=
     recommendedStocks = distances[0:k]
     return recommendedStocks
 
+def testRecommendations(origPort, recommendations, idealPoint, k):
+    
+    print 'Original'
+    beforeDist = euclideanDistance((origPort.annualVol, origPort.expectedReturn), idealPoint)
+    afterPort = copyPortfolio(origPort, testSet)
+    afterPort.updateStatistics()
+    afterDist = euclideanDistance((afterPort.annualVol, afterPort.expectedReturn), idealPoint)
+    print 'Before: ' + str(beforeDist)
+    print 'After: ' + str(afterDist)
+    print 'Diff:' + str(afterDist - beforeDist)
+    
+    origPortPoint = (beforeDist, afterDist)
+    
+    avgPreVA = 0.0
+    avgPostVA = 0.0
+    
+    for beforeDist, ticker, quantity in recommendations:
+        print ticker
+        port = copyPortfolio(origPort, testSet)
+        port.addStock(ticker, quantity)
+        port.updateStatistics()
+        afterDist = euclideanDistance((port.annualVol, port.expectedReturn), idealPoint) 
+        print 'Before: ' + str(beforeDist)
+        print 'After: ' + str(afterDist)
+        print 'Diff:' + str(afterDist - beforeDist)
+        recomPortPoint = (beforeDist, afterDist)
+        
+        for i in range(len(origPortPoint)):
+            distance = (origPortPoint[i] - recomPortPoint[i]) * 10000
+            if i == 0:
+                print 'Pre-test value added: ' + str(distance) + ' bps'
+                avgPreVA += distance
+            else:
+                print 'Post-test value added: ' + str(distance) + ' bps'
+                avgPostVA += distance
+    
+    avgPreVA /= k
+    avgPostVA /= k
+    return (avgPreVA, avgPostVA)
+
+# returns the number of lines in a file. From Stack Overflow: http://stackoverflow.com/questions/845058/how-to-get-line-count-cheaply-in-python
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
 if __name__ == "__main__":
     
     sp500 = StockModel('S+P')
     
     idealVol = 0.20
+    idealReturn = 1.0
     moneyToSpend = 1000
     k = 5
     
@@ -295,16 +348,16 @@ if __name__ == "__main__":
     path = 'data/'
     for infile in glob.glob( os.path.join(path, '*.csv') ):
         ticker = infile.split('/')[1].split('.')[0]
-        stockModel = StockModel(ticker)
+        length = file_len(infile)
         
-        years = len(stockModel.historicalPrices)/float(252)
+        years = length/float(252)
         if years < 5:
             os.remove(infile)
             print 'Removed due to low data: ' + ticker
             
         else:
             # number of trading days in a year * 4 years (fudge factor)
-            divisionPoint = len(stockModel.historicalPrices) - 252*4
+            divisionPoint = length - 252*4
             
             trainingModel = StockModel(ticker, 0, divisionPoint)
             trainingSet[ticker] = trainingModel
@@ -319,48 +372,39 @@ if __name__ == "__main__":
 #            print 'test beta: ' + str(testModel.beta)
 #            print 'training return (annual): ' + str(trainingModel.expectedReturn())
 #            print 'test return (annual): ' + str(testModel.expectedReturn())
-         
-    f = open('recommendedPorts.csv', 'w')
-    f.write('Ticker,AnnualRisk,ExpReturn\n')
     
-    portfolio = PortfolioModel(trainingSet)
-    portfolio.addStock('KO', 20)
-    portfolio.addStock('GOOG', 20)
-    portfolio.addStock('ADSK', 20)
-    portfolio.addStock('C', 20)
-    portfolio.addStock('F', 20)
-    portfolio.updateStatistics()
+    f = open('performance.csv', 'w')
+    f.write('iteration,pre-testVA,post-testVA\n')
     
-    f.write('None' + ',' + str(portfolio.annualizedVol) + ',' + str(portfolio.expectedReturn) + '\n')
+    stocks = trainingSet.keys()
     
-    # applying a heuristic to thin out stocks with volatilites that are higher/lower than what we want it to be
-    volGap = idealVol - portfolio.annualizedVol
-    thinSP = []
-    if volGap > 0:
-        thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol > portfolio.annualizedVol]
-    elif volGap < 0:
-        thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol < portfolio.annualizedVol]
-    thinSP.sort()
-    dataset = [(item[1], item[2]) for item in thinSP]
+    for i in range(1000):
     
-#    print 'Stock Weight of KO: ' + str(portfolio.stockWeights['KO'])
-#    print 'Portfolio Volatility (daily): ' + str(portfolio.dailyVol()) 
-#    print 'Portfolio Volatility (annual): ' + str(portfolio.annualizedVol())
-#    print 'Expected Return: ' + str(portfolio.expectedReturn())
-    
-    beforeTime = time.time()
-    recommendedStocks = knn(dataset, portfolio, k, idealVol, moneyToSpend)
-    afterTime = time.time()
-    diff = afterTime-beforeTime
-    print 'Seconds it takes for knn to run: ' + str(diff)
-    
-    print recommendedStocks
-    
-    for item in recommendedStocks:
-        ticker = item[1]
-        quantity = item[2]
-        p2 = copy.deepcopy(portfolio)
-        p2.addStock(ticker, quantity)
-        p2.updateStatistics()
-        f.write(ticker + ',' + str(p2.annualizedVol) + ',' + str(p2.expectedReturn) + '\n')
+        portfolio = PortfolioModel(trainingSet)
+        
+        for j in range(7):
+            quantity = random.randint(1, 20)
+            ticker = random.choice(stocks)
+            portfolio.addStock(ticker, quantity)
+
+        portfolio.updateStatistics()
+        
+        # applying a heuristic to thin out stocks with volatilites that are higher/lower than what we want it to be
+        volGap = idealVol - portfolio.annualVol
+        thinSP = []
+        if volGap > 0:
+            thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol > portfolio.annualVol]
+        elif volGap < 0:
+            thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol < portfolio.annualVol]
+        thinSP.sort()
+        dataset = [(item[1], item[2]) for item in thinSP]
+        
+        recommendedStocks = knn(dataset, portfolio, k, idealVol, idealReturn, moneyToSpend)
+        print recommendedStocks
+        
+        preVA, postVA = testRecommendations(portfolio, recommendedStocks, (idealVol, 1), k)
+        print postVA
+        
+        f.write(str(i) + ',' + str(preVA) + ',' + str(postVA) + '\n')
+        
     f.close()
