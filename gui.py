@@ -1,6 +1,7 @@
 from Tkinter import *
 import tkFileDialog
 import ttk # support for Tkinter themed widgets
+import mpt, getData
 
 lastx, lasty = 0, 0
 
@@ -10,8 +11,8 @@ class StartScreen:
 	
 		self.window = Tk()
 		self.window.title("Title Goes Here")
-		self.window.geometry('600x300+150+130')
-		self.window.resizable(FALSE,FALSE)
+		self.window.geometry('800x400+150+130')
+		#self.window.resizable(FALSE,FALSE)
 		
 		frame = ttk.Frame(self.window, padding="10 10 10 10")
 		frame.grid(column=0, row=0, sticky=(N, W, E, S))
@@ -64,13 +65,12 @@ class StartScreen:
 	def upload(self):
 		#DEAL WITH INPUT HERE. VALIDATE INPUTS, GIVE MESSAGE BOX IF INVALID, return.
 		self.window.destroy()
-		print "Risk Value: " + self.risk_value.get()
-		print "Max amount per company: " + str(self.dollars.get()) + "." + str(self.cents.get())
-		print "File: " + self.filepath
-		GUI(self.risk_value, self.dollars, self.cents, self.filepath)
+		GUI(self.risk_value.get(), self.dollars.get(), self.cents.get(), self.filepath)
 
 class GUI:
 	def __init__(self, riskVal, d, c, f):
+		portfolio = self.readPortfolio(f)	
+	
 		window = Tk()
 		window.title("Test GUI")
 		window.geometry('1100x600+150+130')
@@ -85,40 +85,38 @@ class GUI:
 		
 		tabs = ttk.Notebook(frame)
 		tabs.grid(column=1, row=1, sticky=(N, W))
-		f1 = ttk.Frame(tabs); # first page, which would get widgets gridded into it
-		# INSERT MATPLOTLIB GRAPHS HERE???
-		f2 = ttk.Frame(tabs); # second page
-		tabs.add(f1, text='Portfolio Dashboard')
-		tabs.add(f2, text='Stock Recommender')
 		
-		self.canvas = Canvas(f1)
+		f1 = ttk.Frame(tabs); # first page, which would get widgets gridded into it
+		tabs.add(f1, text='Portfolio Dashboard')
+		
+		f2 = ttk.Frame(tabs); # second page
+		tabs.add(f2, text='Stock Recommender')
+		self.canvas = Canvas(f2)
 		self.canvas.grid(column=0, row=0, sticky=(N, W, E, S))
 		self.canvas.bind("<Button-1>", self.xy)
 		self.canvas.bind("<B1-Motion>", self.addLine)
+		detail_frame = ttk.Frame(f2, padding="10 10 10 10")
+		detail_frame.grid(column=0, row=1, sticky=(N, W, E, S))
+		details = ttk.Label(detail_frame, text='Some Details about the selected stock...')
+		details.grid(column=0, row=0, sticky=(N, W, E, S))
+		add = ttk.Button(detail_frame, text="Add to Portfolio", command=self.add)
+		add.grid(column=0, row=2, sticky=SE)
+		
 		
 		stat_frame = ttk.Frame(window, padding="10 10 10 10")
 		stat_frame.grid(column=1, row=0, sticky=(N, W, E, S))
 		lf = ttk.Labelframe(stat_frame, text='Key Statistics', padding="10 10 10 10")
 		lf.grid(column=0, row=0, sticky=(N, W, E, S))
 		
-		self.feet = StringVar()
-		self.meters = StringVar()
-		
-		feet_entry = ttk.Entry(lf, width=7, textvariable=self.feet)
-		feet_entry.grid(column=2, row=1, sticky=(N, W, E))
-		
-		ttk.Label(lf, textvariable=self.meters).grid(column=2, row=1, sticky=(W, E))
-		ttk.Button(lf, text="Calculate", command=self.calculate).grid(column=3, row=3, sticky=(S, W))
-		
-		ttk.Label(lf, text="feet").grid(column=3, row=0, sticky=NW)
-		ttk.Label(lf, text="=").grid(column=1, row=1, sticky=E)
-		ttk.Label(lf, text="meters").grid(column=3, row=2, sticky=W)
+		ttk.Label(lf, text="Target Risk: ").grid(column=0, row=0, sticky=W)
+		ttk.Label(lf, text=riskVal).grid(column=1, row=1, sticky=E)
+		ttk.Label(lf, text="Calculated Risk: ").grid(column=0, row=2, sticky=W)
+		ttk.Label(lf, text="blah").grid(column=0, row=3, sticky=E)
+		ttk.Label(lf, text="File: ").grid(column=0, row=4, sticky=W)
+		ttk.Label(lf, text=f).grid(column=0, row=5, sticky=E)
 		
 		# iterate over widgets that are children of frame, add padding around each
 		for child in frame.winfo_children(): child.grid_configure(padx=5, pady=5)
-		
-		window.bind('<Return>', self.calculate)
-		
 		
 		# Enter event loop (ie run the GUI)
 		window.mainloop()
@@ -132,13 +130,22 @@ class GUI:
 		self.canvas.create_line((lastx, lasty, event.x, event.y))
 		lastx, lasty = event.x, event.y
 		
-	def calculate(self):
-		try:
-			value = float(self.feet.get())
-			self.meters.set((0.3048 * value * 10000.0 + 0.5)/10000.0)
-		except ValueError:
-			pass
+	def add(self):
+		print "added"
+		
+	def readPortfolio(self, filePath):
+		portfolio = dict()
+		spSet =  getData.spList()
+		f = open(filePath)
+		lines = f.readlines()
+		for x in range(1, len(lines)):
+			line = lines[x].strip()
+			ticker,quantity = line.strip().split(',')
+			if ticker in spSet: #TODO: account for upper vs lowercase tickers
+				portfolio[ticker] = quantity
+				print ticker
+		return portfolio
 		
 if __name__ == "__main__":
-	#StartScreen()
-	GUI(4, 122, 9, "file/path/test")
+	StartScreen()
+	#GUI(4, 122, 9, "file/path/test")
