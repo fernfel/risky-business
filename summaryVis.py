@@ -15,7 +15,7 @@ DERP= array([4, 6, 1, 8, 7, 3, 8, 2,5 ,8, 2, 4,5, 0, 2, 4, 4, 9, 6, 2])
 COLORHASH= ['#0600FF','#3D39FD', '#6865FE', '#B4B2FF', '#DFDEFE', '#FFFFFF', '#FDE1E1', '#FFB8B8', '#FE7676', '#FF4848', '#FF0000']
 
 
-def main(stockList=EX):  
+def getGraph(stockList=EX):  
 	bar_graph(EX, graph_title=TITLE, output_name='testSum.png')
 
 #def makeArray(stockList):
@@ -54,6 +54,6 @@ def bar_graph(name_value_dict, graph_title='', output_name='bargraph.png'):
 
 
 if __name__ == "__main__":
-	main()
+	getGraph()
 
 
