@@ -3,16 +3,19 @@
 import urllib2
 from BeautifulSoup import BeautifulSoup
 	
-
-if __name__ == "__main__":
+def spList():
 	file = open("S+P.txt")
-	tickerList = list()
+	tickers = list()
 	while 1:
 		line = file.readline()
 		if not line:
 			break
-		tickerList.append(line.strip())	
+		tickers.append(line.strip())	
 	file.close()
+	return tickers
+
+if __name__ == "__main__":
+	tickerList = spList()
 	
 	for ticker in tickerList:
 		print ticker
