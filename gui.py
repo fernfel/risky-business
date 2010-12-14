@@ -83,13 +83,13 @@ class GUI:
 				trainingModel = mpt.StockModel(ticker, 0, divisionPoint)
 				mpt.trainingSet[ticker] = trainingModel
 		
-		portfolioModel = mpt.PortfolioModel(mpt.trainingSet)
+		portfolio = mpt.PortfolioModel(mpt.trainingSet)
 		
 		
 		for k, v in portfolioDict.iteritems():
-			portfolioModel.addStock(k, int(v))
-		portfolioModel.updateStatistics()	
-		risk = portfolioModel.annualVol
+			portfolio.addStock(k, int(v))
+		portfolio.updateStatistics()	
+		risk = portfolio.annualVol
 		
 	
 		window = Tk()
@@ -115,10 +115,22 @@ class GUI:
 		
 		f2 = ttk.Frame(tabs); # second page
 		tabs.add(f2, text='Stock Recommender')
-		self.canvas2 = Canvas(f2)
-		self.canvas2.grid(column=0, row=0, sticky=(N, W, E, S))
-		self.canvas2.bind("<Button-1>", self.xy)
-		self.canvas2.bind("<B1-Motion>", self.addLine)
+#		self.canvas2 = Canvas(f2)
+#		self.canvas2.grid(column=0, row=0, sticky=(N, W, E, S))
+#		self.canvas2.bind("<Button-1>", self.xy)
+#		self.canvas2.bind("<B1-Motion>", self.addLine)
+		
+		recommendations = mpt.knn(mpt.trainingSet, portfolio, 5, .3, 1, d)
+		recommendDict = dict()
+		
+		for beforeDist, ticker, quantity in recommendations:
+			newPort = mpt.copyPortfolio(portfolio, mpt.testSet)
+       		newPort.addStock(ticker, quantity)
+        	newPort.updateStatistics()
+        	recommendDict[ticker] = newPort
+        
+        summaryVis.getInteractiveGraph(f2, portfolio, recommendDict, "<Button-1>")
+		
 		detail_frame = ttk.Frame(f2, padding="10 10 10 10")
 		detail_frame.grid(column=0, row=1, sticky=(N, W, E, S))
 		details = ttk.Label(detail_frame, text='Some Details about the selected stock...')
@@ -145,14 +157,14 @@ class GUI:
 		# Enter event loop (ie run the GUI)
 		window.mainloop()
 	
-	def xy(self, event):
-		global lastx, lasty
-		lastx, lasty = event.x, event.y
-
-	def addLine(self, event):
-		global lastx, lasty
-		self.canvas.create_line((lastx, lasty, event.x, event.y))
-		lastx, lasty = event.x, event.y
+#	def xy(self, event):
+#		global lastx, lasty
+#		lastx, lasty = event.x, event.y
+#
+#	def addLine(self, event):
+#		global lastx, lasty
+#		self.canvas.create_line((lastx, lasty, event.x, event.y))
+#		lastx, lasty = event.x, event.y
 		
 	def add(self):
 		print "added"
