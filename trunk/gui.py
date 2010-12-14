@@ -1,8 +1,14 @@
+import matplotlib
+matplotlib.use('TkAgg')
+
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 from Tkinter import *
 import tkFileDialog
 import ttk # support for Tkinter themed widgets
 import os, glob
 import mpt, getData, summaryVis
+import interactivePlot
 
 lastx, lasty = 0, 0
 
@@ -109,7 +115,8 @@ class GUI:
 		
 		f1 = ttk.Frame(tabs); # first page, which would get widgets gridded into it
 		tabs.add(f1, text='Portfolio Dashboard')
-		canvas1 = summaryVis.getGraph(portfolio, f1)
+		fig1 = summaryVis.getGraph(portfolio, f1)
+		canvas1 = FigureCanvasTkAgg(fig1, master=f1)
 		canvas1.get_tk_widget().grid(column=0, row=0, sticky=(N, W, E, S))
 		canvas1.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 		canvas1._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
@@ -131,8 +138,13 @@ class GUI:
         	newPort.updateStatistics()
         	recommendDict[ticker] = newPort
         	
-#		summaryVis.getInteractiveGraph(f2, portfolio, recommendDict, "<Button-1>", riskVal)
-		
+		fig2 = interactivePlot.getInteractiveGraph(f2, portfolio, recommendDict, "<Button-1>", riskVal)
+		canvas2 = FigureCanvasTkAgg(fig2, master=f2)
+		canvas2.get_tk_widget().grid(column=0, row=0, sticky=(N, W, E, S))
+		canvas2.get_tk_widget().pack(side=TOP, fill=NONE, expand=1)
+#		canvas2._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+		canvas2.show()
+				
 		detail_frame = ttk.Frame(f2, padding="10 10 10 10")
 		detail_frame.grid(column=0, row=1, sticky=(N, W, E, S))
 		details = ttk.Label(detail_frame, text='Some Details about the selected stock...')
@@ -187,4 +199,4 @@ class GUI:
 		
 if __name__ == "__main__":
 	#StartScreen()
-	GUI(4, 122, "jeff_profile.csv")
+	GUI(0.4, 122, "jeff_profile.csv")
