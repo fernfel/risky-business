@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-import matplotlib
-matplotlib.use('TkAgg')
-
 from pylab import *
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 import Tkinter as Tk
@@ -58,9 +54,6 @@ def bar_graph(portfolio, parent, graph_title='', output_name='sumVis.png'):
    
 	#savefig(output_name)
 	#show()
-	
-	canvas = FigureCanvasTkAgg(f, master=parent)
-	return canvas
 	
 	return f
 
