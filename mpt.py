@@ -267,7 +267,7 @@ def knn(dataset, p1, k, idealVol, idealReturn, money, weightFunc=gaussianWeight,
     
     # reorder the training set based on distance to p1
     distances = []
-    for ticker, model in dataset:        
+    for ticker, model in dataset.iteritems():        
         # how much money do you have spend?
         stockPrice = model.historicalPrices[0]
         quantity = int(money/stockPrice)
@@ -360,7 +360,7 @@ def evaluateRecommendations(iterations, k=5, idealVol=0.20, idealReturn=1.0, mon
         elif volGap < 0:
             thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol < portfolio.annualVol]
         thinSP.sort()
-        dataset = [(item[1], item[2]) for item in thinSP]
+        dataset = {item[1]: item[2] for item in thinSP}
         
         recommendedStocks = knn(dataset, portfolio, k, idealVol, idealReturn, moneyToSpend)
         print recommendedStocks
