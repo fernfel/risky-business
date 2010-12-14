@@ -287,14 +287,14 @@ def knn(dataset, p1, k, idealVol, idealReturn, money, weightFunc=gaussianWeight,
 
 def testRecommendations(origPort, recommendations, idealPoint, k):
     
-    print 'Original'
+#    print 'Original'
     beforeDist = euclideanDistance((origPort.annualVol, origPort.expectedReturn), idealPoint)
     afterPort = copyPortfolio(origPort, testSet)
     afterPort.updateStatistics()
     afterDist = euclideanDistance((afterPort.annualVol, afterPort.expectedReturn), idealPoint)
-    print 'Before: ' + str(beforeDist)
-    print 'After: ' + str(afterDist)
-    print 'Diff:' + str(afterDist - beforeDist)
+#    print 'Before: ' + str(beforeDist)
+#    print 'After: ' + str(afterDist)
+#    print 'Diff:' + str(afterDist - beforeDist)
     
     origPortPoint = (beforeDist, afterDist)
     
@@ -307,22 +307,26 @@ def testRecommendations(origPort, recommendations, idealPoint, k):
         port.addStock(ticker, quantity)
         port.updateStatistics()
         afterDist = euclideanDistance((port.annualVol, port.expectedReturn), idealPoint) 
-        print 'Training: ' + str(beforeDist)
-        print 'Test: ' + str(afterDist)
-        print 'Diff:' + str(afterDist - beforeDist)
+#        print 'Training: ' + str(beforeDist)
+#        print 'Test: ' + str(afterDist)
+#        print 'Diff:' + str(afterDist - beforeDist)
         recomPortPoint = (beforeDist, afterDist)
         
         for i in range(len(origPortPoint)):
             distance = (origPortPoint[i] - recomPortPoint[i]) * 10000
             if i == 0:
-                print 'Training value added: ' + str(distance) + ' bps'
-                avgPreVA += distance
+#                print 'Training value added: ' + str(distance) + ' bps'
+#                avgPreVA += distance
+                if distance > 0:
+                    avgPreVA += 1
             else:
-                print 'Test value added: ' + str(distance) + ' bps'
-                avgPostVA += distance
+#                print 'Test value added: ' + str(distance) + ' bps'
+#                avgPostVA += distance
+                if distance > 0:
+                    avgPostVA += 1
     
-    avgPreVA /= k
-    avgPostVA /= k
+#    avgPreVA /= k
+#    avgPostVA /= k
     return (avgPreVA, avgPostVA)
 
 def evaluateRecommendations(iterations, k=5, idealVol=0.20, idealReturn=1.0, moneyToSpend=1000):
@@ -363,15 +367,17 @@ def evaluateRecommendations(iterations, k=5, idealVol=0.20, idealReturn=1.0, mon
         
         preVA, postVA = testRecommendations(portfolio, recommendedStocks, (idealVol, 1), k)
         print postVA
-        if postVA > 0:
-            accuracy += 1.0
+#        if postVA > 0.5:
+        
+        accuracy += postVA
         
         data.append(str(preVA))
         data.append(str(postVA))
         
         f.write(",".join(data) + '\n')
     
-    accuracy /= 100
+    print 'Accuracy: ' + str(accuracy)
+    accuracy /= (iterations*k)
     print 'Accuracy: ' + str(accuracy)
     
     f.close()    
@@ -416,5 +422,5 @@ sp500 = StockModel('S+P')
 initalizeData()
 
 if __name__ == "__main__":
-#    evaluateRecommendations(100)
+#    evaluateRecommendations(100, 5, 0.70)
     pass
