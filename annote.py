@@ -18,7 +18,7 @@ class AnnoteFinder:
   """
 
   def __init__(self, xdata, ydata, annotes, axis=None, xtol=None, ytol=None):
-    self.data = zip(xdata, ydata, annotes)
+    self.data = zip(xdata, ydata, self.findAnnote(x,y,annotes))
     if xtol is None:
       xtol = ((max(xdata) - min(xdata))/float(len(xdata)))/2
     if ytol is None:
@@ -31,6 +31,12 @@ class AnnoteFinder:
       self.axis= axis
     self.drawnAnnotations = {}
     self.links = []
+	
+  def findAnnote(x, y, annotes):
+    for i in annotes:
+      if (x == annotes[i].annualVol):
+        if (y == annotes[i].expectedReturn):
+          return i
 
   def distance(self, x1, x2, y1, y2):
     """
@@ -50,6 +56,7 @@ class AnnoteFinder:
         if annotes:
           annotes.sort()
           distance, x, y, annote = annotes[0]
+		  self.
           self.drawAnnote(event.inaxes, x, y, annote)
           for l in self.links:
             l.drawSpecificAnnote(annote)
