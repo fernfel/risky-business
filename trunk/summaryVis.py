@@ -4,6 +4,8 @@ from pylab import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
+import Tkinter as Tk
+
 MAX_WIDTH=8
 ACTUAL_W= 24.4
 MAX_HEIGHT=7
@@ -18,10 +20,10 @@ def getGraph(portfolio, parent):
 	for key in portfolio.stocks:
 		clientStocks[key]= (portfolio.dataset[key].expectedReturn(), portfolio.dataset[key].annualVol)
 		
-	return bar_graph(clientStocks, graph_title=TITLE, output_name='testSum.png', parent)
+	return bar_graph(clientStocks, parent, graph_title=TITLE, output_name='testSum.png')
 	
 
-def bar_graph(portfolio, graph_title='', output_name='sumVis.png', parent):
+def bar_graph(portfolio, parent, graph_title='', output_name='sumVis.png'):
 	sortedP= sorted(portfolio) #list of tickers alphabetically
 	
 	f = Figure(figsize=(MAX_WIDTH, MAX_HEIGHT)) # image dimensions  
@@ -55,6 +57,9 @@ def bar_graph(portfolio, graph_title='', output_name='sumVis.png', parent):
 	#savefig(output_name)
 	#show()
 	
+	canvas = FigureCanvasTkAgg(f, master=parent)
+	return canvas
+
 	return f
 
 #if __name__ == "__main__":

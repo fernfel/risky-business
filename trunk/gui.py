@@ -2,7 +2,7 @@ from Tkinter import *
 import tkFileDialog
 import ttk # support for Tkinter themed widgets
 import os, glob
-import mpt, getData#, summaryVis
+import mpt, getData, summaryVis
 
 lastx, lasty = 0, 0
 
@@ -109,9 +109,9 @@ class GUI:
 		
 		f1 = ttk.Frame(tabs); # first page, which would get widgets gridded into it
 		tabs.add(f1, text='Portfolio Dashboard')
-		#canvas1 = summaryVis.getGraph(portfolioModel, f1)
-		#canvas1.show()
-		#canvas1.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+		canvas1 = summaryVis.getGraph(portfolio, f1)
+		canvas1.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+		canvas1.show()
 		
 		f2 = ttk.Frame(tabs); # second page
 		tabs.add(f2, text='Stock Recommender')
@@ -128,8 +128,8 @@ class GUI:
        		newPort.addStock(ticker, quantity)
         	newPort.updateStatistics()
         	recommendDict[ticker] = newPort
-        
-        summaryVis.getInteractiveGraph(f2, portfolio, recommendDict, "<Button-1>")
+        	
+#		summaryVis.getInteractiveGraph(f2, portfolio, recommendDict, "<Button-1>")
 		
 		detail_frame = ttk.Frame(f2, padding="10 10 10 10")
 		detail_frame.grid(column=0, row=1, sticky=(N, W, E, S))
