@@ -64,10 +64,13 @@ class AnnoteFinder:
         m.set_visible(not m.get_visible())
       self.axis.figure.canvas.draw()
     else:
-      t = axis.text(x,y, "(%3.2f, %3.2f) - %s"%(x,y,annote), )
-      m = axis.scatter([x],[y], marker='d', c='r', zorder=100)
+      t = axis.text(x,y, annote, )
+	  #t = axis.text(x,y, "(%3.2f, %3.2f) - %s"%(x,y,annote), )
+      m = axis.scatter([x],[y], marker='^', c='r', s=60, zorder=300)
       self.drawnAnnotations[(x,y)] =(t,m)
       self.axis.figure.canvas.draw()
+      return annote
+      print annote
 
   def drawSpecificAnnote(self, annote):
     annotesToDraw = [(x,y,a) for x,y,a in self.data if a==annote]
