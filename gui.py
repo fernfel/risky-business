@@ -17,10 +17,6 @@ class StartScreen:
 		frame = ttk.Frame(self.window, padding="10 10 10 10")
 		frame.grid(column=0, row=0, sticky=(N, W, E, S))
 		
-		# Purpose?
-		#frame.columnconfigure(0, weight=1)
-		#frame.rowconfigure(0, weight=1)
-		
 		self.lf1 = ttk.Labelframe(frame, text='Step 1')
 		self.lf1.grid(column=1, row=1, sticky=EW)
 		ttk.Label(self.lf1, text="On a scale of 1 to 5, rate your personal risk tolerance:   ").grid(column=1, row=0, sticky=W)
@@ -174,5 +170,5 @@ class GUI:
 		return portfolio
 		
 if __name__ == "__main__":
-	StartScreen()
-	#GUI(4, 122, "jeff_profile.csv")
+	#StartScreen()
+	GUI(4, 122, "jeff_profile.csv")
