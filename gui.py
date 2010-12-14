@@ -70,8 +70,8 @@ class StartScreen:
 
 class GUI:
 	def __init__(self, riskVal, d, f):
-		riskVal = (float(riskVal) * 20 - 10)/100
-		
+		self.riskVal = (float(riskVal) * 20 - 10)/100
+		self.d = d
 		portfolioDict = self.readPortfolio(f)	
 		
 		path = 'data/'
@@ -114,41 +114,41 @@ class GUI:
 		tabs = ttk.Notebook(frame)
 		tabs.grid(column=1, row=1, sticky=(N, W))
 		
-		f1 = ttk.Frame(tabs); # first page, which would get widgets gridded into it
-		tabs.add(f1, text='Portfolio Dashboard')
-		fig1 = summaryVis.getGraph(self.portfolio, f1)
-		canvas1 = FigureCanvasTkAgg(fig1, master=f1)
+		self.f1 = ttk.Frame(tabs); # first page, which would get widgets gridded into it
+		tabs.add(self.f1, text='Portfolio Dashboard')
+		self.fig1 = summaryVis.getGraph(self.portfolio, self.f1)
+		canvas1 = FigureCanvasTkAgg(self.fig1, master=self.f1)
 		canvas1.get_tk_widget().grid(column=0, row=0, sticky=(N, W, E, S))
 		canvas1.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 		canvas1._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 		canvas1.show()
 		
-		f2 = ttk.Frame(tabs); # second page
-		tabs.add(f2, text='Stock Recommender')
-#		self.canvas2 = Canvas(f2)
+		self.f2 = ttk.Frame(tabs); # second page
+		tabs.add(self.f2, text='Stock Recommender')
+#		self.canvas2 = Canvas(self.f2)
 #		self.canvas2.grid(column=0, row=0, sticky=(N, W, E, S))
 #		self.canvas2.bind("<Button-1>", self.xy)
 #		self.canvas2.bind("<B1-Motion>", self.addLine)
 		
-		recommendations = mpt.knn(mpt.trainingSet, self.portfolio, 5, riskVal, 1, d)
-		recommendDict = dict()
+		recommendations = mpt.knn(mpt.trainingSet, self.portfolio, 5, self.riskVal, 1, self.d)
+		self.recommendDict = dict()
 		
 		for beforeDist, ticker, quantity in recommendations:
 			newPort = mpt.copyPortfolio(self.portfolio, mpt.testSet)
 			newPort.addStock(ticker, quantity)
 			newPort.updateStatistics()
-			recommendDict[ticker] = newPort
+			self.recommendDict[ticker] = newPort
         	
-		fig2 = interactivePlot.getInteractiveGraph(f2, self.portfolio, recommendDict, "<Button-1>", riskVal)
-#		recommendedFrame = ttk.Frame(f2)
+		self.fig2 = interactivePlot.getInteractiveGraph(self.f2, self.portfolio, recommendDict, "<Button-1>", self.riskVal)
+#		recommendedFrame = ttk.Frame(self.f2)
 #		recommendedFrame.grid(column=0, row=1, sticky=(N, W, E, S))
-		canvas2 = FigureCanvasTkAgg(fig2, master=f2)
+		canvas2 = FigureCanvasTkAgg(self.fig2, master=self.f2)
 		canvas2.get_tk_widget().grid(column=0, row=0, sticky=(N, W, E, S))
 #		canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 #		canvas2._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 		canvas2.show()
 				
-		detail_frame = ttk.Frame(f2, padding="10 10 10 10")
+		detail_frame = ttk.Frame(self.f2, padding="10 10 10 10")
 		detail_frame.grid(column=0, row=1, sticky=(N, W, E, S))
 		details = ttk.Label(detail_frame, text='Some Details about the selected stock...')
 		details.grid(column=0, row=0, sticky=(N, W, E, S))
@@ -164,9 +164,10 @@ class GUI:
 		lf.grid(column=0, row=0, sticky=(N, W, E, S))
 		
 		ttk.Label(lf, text="Target Risk: ").grid(column=0, row=0, sticky=W)
-		ttk.Label(lf, text=riskVal).grid(column=1, row=1, sticky=E)
+		ttk.Label(lf, text=self.riskVal).grid(column=1, row=1, sticky=E)
 		ttk.Label(lf, text="Calculated Risk: ").grid(column=0, row=2, sticky=W)
-		ttk.Label(lf, text=risk).grid(column=0, row=3, sticky=E)
+		self.calc = ttk.Label(lf, text=risk)
+		self.calc.grid(column=0, row=3, sticky=E)
 		ttk.Label(lf, text="File: ").grid(column=0, row=4, sticky=W)
 		ttk.Label(lf, text=f).grid(column=0, row=5, sticky=E)
 		
@@ -180,6 +181,20 @@ class GUI:
 		print "added " + ticker
 		self.portfolio.addStock(ticker, quantity)
 		self.portfolio.updateStatistics()
+		risk = self.portfolio.annualVol
+		self.calc = ttk.Label(lf, text=risk)
+		self.fig1 = summaryVis.getGraph(self.portfolio, self.f1)
+		recommendations = mpt.knn(mpt.trainingSet, self.portfolio, 5, self.riskVal, 1, self.d)
+		self.recommendDict = dict()
+		
+		for beforeDist, ticker, quantity in recommendations:
+			newPort = mpt.copyPortfolio(self.portfolio, mpt.testSet)
+			newPort.addStock(ticker, quantity)
+			newPort.updateStatistics()
+			self.recommendDict[ticker] = newPort
+		self.fig2 = interactivePlot.getInteractiveGraph(self.f2, self.portfolio, self.recommendDict, "<Button-1>", self.riskVal)
+		
+		
 		
 	def readPortfolio(self, filePath):
 		portfolio = dict()
