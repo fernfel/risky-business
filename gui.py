@@ -2,7 +2,7 @@ from Tkinter import *
 import tkFileDialog
 import ttk # support for Tkinter themed widgets
 import os, glob
-import mpt, getData
+import mpt, getData#, summaryVis
 
 lastx, lasty = 0, 0
 
@@ -91,7 +91,6 @@ class GUI:
 		portfolioModel.updateStatistics()	
 		risk = portfolioModel.annualVol
 		
-		# TODO Make call to annie's stuff, send in portfolio			
 	
 		window = Tk()
 		window.title("Test GUI")
@@ -110,13 +109,16 @@ class GUI:
 		
 		f1 = ttk.Frame(tabs); # first page, which would get widgets gridded into it
 		tabs.add(f1, text='Portfolio Dashboard')
+		#canvas1 = summaryVis.getGraph(portfolioModel, f1)
+		#canvas1.show()
+		#canvas1.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 		
 		f2 = ttk.Frame(tabs); # second page
 		tabs.add(f2, text='Stock Recommender')
-		self.canvas = Canvas(f2)
-		self.canvas.grid(column=0, row=0, sticky=(N, W, E, S))
-		self.canvas.bind("<Button-1>", self.xy)
-		self.canvas.bind("<B1-Motion>", self.addLine)
+		self.canvas2 = Canvas(f2)
+		self.canvas2.grid(column=0, row=0, sticky=(N, W, E, S))
+		self.canvas2.bind("<Button-1>", self.xy)
+		self.canvas2.bind("<B1-Motion>", self.addLine)
 		detail_frame = ttk.Frame(f2, padding="10 10 10 10")
 		detail_frame.grid(column=0, row=1, sticky=(N, W, E, S))
 		details = ttk.Label(detail_frame, text='Some Details about the selected stock...')
