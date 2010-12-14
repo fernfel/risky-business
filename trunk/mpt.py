@@ -1,5 +1,4 @@
 import numpy as np
-#import scipy as sp
 import scipy.stats as stats
 import copy
 import math
@@ -9,8 +8,6 @@ import random
 
 trainingSet = dict()
 testSet = dict()
-
-sp500 = ""
 
 class StockModel():
     
@@ -46,6 +43,7 @@ class StockModel():
                 self.historicalPrices.append(float(adjClose))        
      
         f.close()
+        
         self.updateCalculations()
                
     def calculateReturns(self, historicalPrices):
@@ -309,23 +307,74 @@ def testRecommendations(origPort, recommendations, idealPoint, k):
         port.addStock(ticker, quantity)
         port.updateStatistics()
         afterDist = euclideanDistance((port.annualVol, port.expectedReturn), idealPoint) 
-        print 'Before: ' + str(beforeDist)
-        print 'After: ' + str(afterDist)
+        print 'Training: ' + str(beforeDist)
+        print 'Test: ' + str(afterDist)
         print 'Diff:' + str(afterDist - beforeDist)
         recomPortPoint = (beforeDist, afterDist)
         
         for i in range(len(origPortPoint)):
             distance = (origPortPoint[i] - recomPortPoint[i]) * 10000
             if i == 0:
-                print 'Pre-test value added: ' + str(distance) + ' bps'
+                print 'Training value added: ' + str(distance) + ' bps'
                 avgPreVA += distance
             else:
-                print 'Post-test value added: ' + str(distance) + ' bps'
+                print 'Test value added: ' + str(distance) + ' bps'
                 avgPostVA += distance
     
     avgPreVA /= k
     avgPostVA /= k
     return (avgPreVA, avgPostVA)
+
+def evaluateRecommendations(iterations, k=5, idealVol=0.20, idealReturn=1.0, moneyToSpend=1000):
+    f = open('performance.csv', 'w')
+    f.write('iteration,volGap,pre-testVA,post-testVA\n')
+    
+    stocks = trainingSet.keys()
+    accuracy = 0
+    for i in range(iterations):
+        
+        data = [str(i)]
+        portfolio = PortfolioModel(trainingSet)
+        
+        for j in range(7):
+            quantity = random.randint(1, 20)
+            ticker = random.choice(stocks)
+            portfolio.addStock(ticker, quantity)
+
+        portfolio.updateStatistics()
+        print 'Holdings of portfolio: ' + str(portfolio.stocks)
+        
+        # applying a heuristic to thin out stocks with volatilites that are higher/lower than what we want it to be
+        volGap = idealVol - portfolio.annualVol
+        
+        print "Volatility gap: " + str(volGap)
+        data.append(str(volGap))
+        
+        thinSP = []
+        if volGap > 0:
+            thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol > portfolio.annualVol]
+        elif volGap < 0:
+            thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol < portfolio.annualVol]
+        thinSP.sort()
+        dataset = [(item[1], item[2]) for item in thinSP]
+        
+        recommendedStocks = knn(dataset, portfolio, k, idealVol, idealReturn, moneyToSpend)
+        print recommendedStocks
+        
+        preVA, postVA = testRecommendations(portfolio, recommendedStocks, (idealVol, 1), k)
+        print postVA
+        if postVA > 0:
+            accuracy += 1.0
+        
+        data.append(str(preVA))
+        data.append(str(postVA))
+        
+        f.write(",".join(data) + '\n')
+    
+    accuracy /= 100
+    print 'Accuracy: ' + str(accuracy)
+    
+    f.close()    
 
 # returns the number of lines in a file. From Stack Overflow: http://stackoverflow.com/questions/845058/how-to-get-line-count-cheaply-in-python
 def file_len(fname):
@@ -334,17 +383,7 @@ def file_len(fname):
             pass
     return i + 1
 
-if __name__ == "__main__":
-    
-    sp500 = StockModel('S+P')
-    
-    idealVol = 0.20
-    idealReturn = 1.0
-    moneyToSpend = 1000
-    k = 5
-    
-    start = time.time()
-    
+def initalizeData():
     path = 'data/'
     for infile in glob.glob( os.path.join(path, '*.csv') ):
         ticker = infile.split('/')[1].split('.')[0]
@@ -372,39 +411,10 @@ if __name__ == "__main__":
 #            print 'test beta: ' + str(testModel.beta)
 #            print 'training return (annual): ' + str(trainingModel.expectedReturn())
 #            print 'test return (annual): ' + str(testModel.expectedReturn())
-    
-    f = open('performance.csv', 'w')
-    f.write('iteration,pre-testVA,post-testVA\n')
-    
-    stocks = trainingSet.keys()
-    
-    for i in range(1000):
-    
-        portfolio = PortfolioModel(trainingSet)
-        
-        for j in range(7):
-            quantity = random.randint(1, 20)
-            ticker = random.choice(stocks)
-            portfolio.addStock(ticker, quantity)
 
-        portfolio.updateStatistics()
-        
-        # applying a heuristic to thin out stocks with volatilites that are higher/lower than what we want it to be
-        volGap = idealVol - portfolio.annualVol
-        thinSP = []
-        if volGap > 0:
-            thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol > portfolio.annualVol]
-        elif volGap < 0:
-            thinSP = [(model.annualVol, ticker, model) for ticker, model in trainingSet.iteritems() if model.annualVol < portfolio.annualVol]
-        thinSP.sort()
-        dataset = [(item[1], item[2]) for item in thinSP]
-        
-        recommendedStocks = knn(dataset, portfolio, k, idealVol, idealReturn, moneyToSpend)
-        print recommendedStocks
-        
-        preVA, postVA = testRecommendations(portfolio, recommendedStocks, (idealVol, 1), k)
-        print postVA
-        
-        f.write(str(i) + ',' + str(preVA) + ',' + str(postVA) + '\n')
-        
-    f.close()
+sp500 = StockModel('S+P')
+initalizeData()
+
+if __name__ == "__main__":
+#    evaluateRecommendations(100)
+    pass
