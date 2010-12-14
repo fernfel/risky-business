@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 from pylab import *
-#from mpt import *
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 
 MAX_WIDTH=8
 ACTUAL_W= 24.4
@@ -12,21 +13,18 @@ N_GRIDLINES=10
 COLORHASH= ['#0600FF','#3D39FD', '#6865FE', '#B4B2FF', '#DFDEFE', '#FFFFFF', '#FDE1E1', '#FFB8B8', '#FE7676', '#FF4848', '#FF0000']
 
 
-
-def getGraph(portfolio):
+def getGraph(portfolio, parent):
 	clientStocks= {}
 	for key in portfolio.stocks:
 		clientStocks[key]= (portfolio.dataset[key].expectedReturn(), portfolio.dataset[key].annualVol)
 		
-	bar_graph(clientStocks, graph_title=TITLE, output_name='testSum.png')
+	return bar_graph(clientStocks, graph_title=TITLE, output_name='testSum.png', parent)
+	
 
-#def makeArray(stockList):
-#	for i in stocklist:		
-
-def bar_graph(portfolio, graph_title='', output_name='sumVis.png'):
+def bar_graph(portfolio, graph_title='', output_name='sumVis.png', parent):
 	sortedP= sorted(portfolio) #list of tickers alphabetically
 	
-	figure(figsize=(MAX_WIDTH, MAX_HEIGHT)) # image dimensions  
+	f = Figure(figsize=(MAX_WIDTH, MAX_HEIGHT)) # image dimensions  
 	title(graph_title, size='small')
 	space= 0.2
 	intrv= ACTUAL_W/double(len(portfolio))-space
@@ -54,9 +52,10 @@ def bar_graph(portfolio, graph_title='', output_name='sumVis.png'):
 	gca().yaxis.set_major_formatter(formatter)
 	gca().yaxis.grid(which='major')
    
-	savefig(output_name)
-	show()
-
+	#savefig(output_name)
+	#show()
+	
+	return f
 
 #if __name__ == "__main__":
 #	getGraph(portfolio)
