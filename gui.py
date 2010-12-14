@@ -141,9 +141,11 @@ class GUI:
         	recommendDict[ticker] = newPort
         	
 		fig2 = interactivePlot.getInteractiveGraph(f2, portfolio, recommendDict, "<Button-1>", riskVal)
+#		recommendedFrame = ttk.Frame(f2)
+#		recommendedFrame.grid(column=0, row=1, sticky=(N, W, E, S))
 		canvas2 = FigureCanvasTkAgg(fig2, master=f2)
 		canvas2.get_tk_widget().grid(column=0, row=0, sticky=(N, W, E, S))
-		canvas2.get_tk_widget().pack(side=TOP, fill=NONE, expand=1)
+#		canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 #		canvas2._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 		canvas2.show()
 				
@@ -153,7 +155,6 @@ class GUI:
 		details.grid(column=0, row=0, sticky=(N, W, E, S))
 		add = ttk.Button(detail_frame, text="Add to Portfolio", command=self.add)
 		add.grid(column=0, row=2, sticky=SE)
-		
 		
 		stat_frame = ttk.Frame(window, padding="10 10 10 10")
 		stat_frame.grid(column=1, row=0, sticky=(N, W, E, S))
