@@ -87,9 +87,9 @@ class GUI:
 		
 		
 		for k, v in portfolioDict.iteritems():
-			portfolioModel.addStock(k, v)
+			portfolioModel.addStock(k, int(v))
 		portfolioModel.updateStatistics()	
-		risk = portfolio.annualizedVol
+		risk = portfolioModel.annualVol
 		
 		# TODO Make call to annie's stuff, send in portfolio			
 	
