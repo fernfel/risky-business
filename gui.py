@@ -129,7 +129,7 @@ class GUI:
         	newPort.updateStatistics()
         	recommendDict[ticker] = newPort
         	
-#		summaryVis.getInteractiveGraph(f2, portfolio, recommendDict, "<Button-1>")
+#		summaryVis.getInteractiveGraph(f2, portfolio, recommendDict, "<Button-1>", riskVal)
 		
 		detail_frame = ttk.Frame(f2, padding="10 10 10 10")
 		detail_frame.grid(column=0, row=1, sticky=(N, W, E, S))
