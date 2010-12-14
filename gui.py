@@ -201,5 +201,5 @@ class GUI:
 		return portfolio
 		
 if __name__ == "__main__":
-	StartScreen()
-#	GUI(0.4, 122, "jeff_profile.csv")
+#	StartScreen()
+	GUI(4, 122, "jeff_profile.csv")

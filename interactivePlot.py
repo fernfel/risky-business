@@ -26,18 +26,20 @@ def getInteractiveGraph(parent, currentPortfolio, recPortfolios, onclickFxn, ide
 def dot_graph(parent, currPortfolio, recPortfolios, onclickFxn, idealRisk):
 
 	f = Figure(figsize=(MAX_WIDTH, MAX_HEIGHT)) # image dimensions
+#	f = plt.figure()
 	ax = f.add_subplot(111)
 	ax.set_autoscale_on(True)
 	ax.set_title(graph_title)
 	ax.set_xlabel('Risk')
 	ax.set_ylabel('Expected Return')
 
-	ptX=[]
-	ptY=[]
+	ptX = [v.annualVol for v in recPortfolios.values()]
+	ptY = [v.expectedReturn for v in recPortfolios.values()]
 	
-	for i in recPortfolios.itervalues():
-		ptX.append(i.expectedReturn)
-		ptY.append(i.annualVol)
+	tickers = recPortfolios.keys()
+	ptXCopy = [v.annualVol for v in recPortfolios.values()]
+	ptYCopy = [v.expectedReturn for v in recPortfolios.values()]
+	
 	
 	#current portfolio
 	ax.scatter([currPortfolio.expectedReturn], [currPortfolio.annualVol], c='#000000')
@@ -57,7 +59,7 @@ def dot_graph(parent, currPortfolio, recPortfolios, onclickFxn, idealRisk):
 #	#
 #	ax.scatter([1],[idealRisk], s=30, c='g')
 	
-	af = annote.AnnoteFinder(x, y, annotes)
+	af = annote.AnnoteFinder(ptXCopy, ptYCopy, tickers)
 	connect('button_press_event', af)
 	
 #	show()
