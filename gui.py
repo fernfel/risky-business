@@ -1,6 +1,7 @@
 from Tkinter import *
 import tkFileDialog
 import ttk # support for Tkinter themed widgets
+import os, glob
 import mpt, getData
 
 lastx, lasty = 0, 0
@@ -10,9 +11,8 @@ class StartScreen:
 		self.filepath = None
 	
 		self.window = Tk()
-		self.window.title("Title Goes Here")
-		self.window.geometry('800x400+150+130')
-		#self.window.resizable(FALSE,FALSE)
+		self.window.title("Welcome to Risky Business")
+		self.window.resizable(FALSE,FALSE)
 		
 		frame = ttk.Frame(self.window, padding="10 10 10 10")
 		frame.grid(column=0, row=0, sticky=(N, W, E, S))
@@ -23,30 +23,26 @@ class StartScreen:
 		
 		self.lf1 = ttk.Labelframe(frame, text='Step 1')
 		self.lf1.grid(column=1, row=1, sticky=EW)
-		ttk.Label(self.lf1, text="Enter your personal risk tolerance:").grid(column=1, row=0, sticky=E)
+		ttk.Label(self.lf1, text="Enter your personal risk tolerance:   ").grid(column=1, row=0, sticky=W)
 		self.risk_value = StringVar()
 		one = ttk.Radiobutton(self.lf1, text='1   ', variable=self.risk_value, value='1')
-		one.grid(column=1, row=1, sticky=E)
+		one.grid(column=2, row=0, sticky=E)
 		two = ttk.Radiobutton(self.lf1, text='2   ', variable=self.risk_value, value='2')
-		two.grid(column=2, row=1, sticky=E)
+		two.grid(column=3, row=0, sticky=E)
 		three = ttk.Radiobutton(self.lf1, text='3   ', variable=self.risk_value, value='3')
-		three.grid(column=3, row=1, sticky=E)
+		three.grid(column=4, row=0, sticky=E)
 		four = ttk.Radiobutton(self.lf1, text='4   ', variable=self.risk_value, value='4')
-		four.grid(column=4, row=1, sticky=E)
+		four.grid(column=5, row=0, sticky=E)
 		five = ttk.Radiobutton(self.lf1, text='5', variable=self.risk_value, value='5')
-		five.grid(column=5, row=1, sticky=E)
+		five.grid(column=6, row=0, sticky=E)
 		
 		self.lf2 = ttk.Labelframe(frame, text='Step 2')
 		self.lf2.grid(column=1, row=2, sticky=EW)
-		ttk.Label(self.lf2, text="What is the most you would spend towards one company?").grid(column=1, row=0, sticky=E)
-		ttk.Label(self.lf2, text="$").grid(column=1, row=1, sticky=E)
+		ttk.Label(self.lf2, text="What is the most you would spend towards one company?   ").grid(column=1, row=0, sticky=E)
+		ttk.Label(self.lf2, text="$").grid(column=2, row=0, sticky=E)
 		self.dollars = IntVar()
 		dollars_entry = ttk.Entry(self.lf2, width=7, textvariable=self.dollars)
-		dollars_entry.grid(column=2, row=1, sticky=E)
-		ttk.Label(self.lf2, text=".").grid(column=3, row=1, sticky=E)
-		self.cents = IntVar()
-		cents_entry = ttk.Entry(self.lf2, width=2, textvariable=self.cents)
-		cents_entry.grid(column=4, row=1, sticky=E)
+		dollars_entry.grid(column=3, row=0, sticky=E)
 		
 		self.lf3 = ttk.Labelframe(frame, text='Step 3')
 		self.lf3.grid(column=1, row=3, sticky=EW)
@@ -65,11 +61,43 @@ class StartScreen:
 	def upload(self):
 		#DEAL WITH INPUT HERE. VALIDATE INPUTS, GIVE MESSAGE BOX IF INVALID, return.
 		self.window.destroy()
-		GUI(self.risk_value.get(), self.dollars.get(), self.cents.get(), self.filepath)
+		if self.risk_value.get() == "":
+			GUI("3", self.dollars.get(), self.filepath)
+		GUI(self.risk_value.get(), self.dollars.get(), self.filepath)
 
 class GUI:
-	def __init__(self, riskVal, d, c, f):
-		portfolio = self.readPortfolio(f)	
+	def __init__(self, riskVal, d, f):
+		portfolioDict = self.readPortfolio(f)	
+		
+		#sp500 = mpt.StockModel('S+P')
+		
+		path = 'data/'
+		for infile in glob.glob( os.path.join(path, '*.csv') ):
+			ticker = infile.split('/')[1].split('.')[0]
+			print ticker
+			stockModel = mpt.StockModel(ticker)
+			
+			years = len(stockModel.historicalPrices)/float(252)
+			if years < 5:
+				os.remove(infile)
+				print 'Removed due to low data: ' + ticker
+				
+			else:
+				# number of trading days in a year * 4 years (fudge factor)
+				divisionPoint = len(stockModel.historicalPrices) - 252*4
+				
+				trainingModel = mpt.StockModel(ticker, 0, divisionPoint)
+				trainingSet[ticker] = trainingModel
+		
+		#portfolioModel = mpt.PortfolioModel(trainingSet)
+		
+		
+		for k, v in portfolioDict.iteritems():
+			portfolioModel.addStock(k, v)
+		portfolioModel.updateStatistics()	
+		risk = portfolio.annualizedVol
+		
+		# TODO Make call to annie's stuff, send in portfolio			
 	
 		window = Tk()
 		window.title("Test GUI")
@@ -111,7 +139,7 @@ class GUI:
 		ttk.Label(lf, text="Target Risk: ").grid(column=0, row=0, sticky=W)
 		ttk.Label(lf, text=riskVal).grid(column=1, row=1, sticky=E)
 		ttk.Label(lf, text="Calculated Risk: ").grid(column=0, row=2, sticky=W)
-		ttk.Label(lf, text="blah").grid(column=0, row=3, sticky=E)
+		ttk.Label(lf, text=risk).grid(column=0, row=3, sticky=E)
 		ttk.Label(lf, text="File: ").grid(column=0, row=4, sticky=W)
 		ttk.Label(lf, text=f).grid(column=0, row=5, sticky=E)
 		
@@ -138,14 +166,15 @@ class GUI:
 		spSet =  getData.spList()
 		f = open(filePath)
 		lines = f.readlines()
-		for x in range(1, len(lines)):
-			line = lines[x].strip()
+		for i in range(1, len(lines)):
+			line = lines[i].strip()
 			ticker,quantity = line.strip().split(',')
 			if ticker in spSet: #TODO: account for upper vs lowercase tickers
 				portfolio[ticker] = quantity
-				print ticker
+			else: 
+				print "Unfortunately, " + str(ticker) + " is not in our data set."
 		return portfolio
 		
 if __name__ == "__main__":
 	StartScreen()
-	#GUI(4, 122, 9, "file/path/test")
+	#GUI(4, 122, "jeff_profile.csv")
