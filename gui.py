@@ -23,7 +23,7 @@ class StartScreen:
 		
 		self.lf1 = ttk.Labelframe(frame, text='Step 1')
 		self.lf1.grid(column=1, row=1, sticky=EW)
-		ttk.Label(self.lf1, text="Enter your personal risk tolerance:   ").grid(column=1, row=0, sticky=W)
+		ttk.Label(self.lf1, text="On a scale of 1 to 5, rate your personal risk tolerance:   ").grid(column=1, row=0, sticky=W)
 		self.risk_value = StringVar()
 		one = ttk.Radiobutton(self.lf1, text='1   ', variable=self.risk_value, value='1')
 		one.grid(column=2, row=0, sticky=E)
@@ -38,7 +38,7 @@ class StartScreen:
 		
 		self.lf2 = ttk.Labelframe(frame, text='Step 2')
 		self.lf2.grid(column=1, row=2, sticky=EW)
-		ttk.Label(self.lf2, text="What is the most you would spend towards one company?   ").grid(column=1, row=0, sticky=E)
+		ttk.Label(self.lf2, text="What is the most you are willing to invest in one company?   ").grid(column=1, row=0, sticky=E)
 		ttk.Label(self.lf2, text="$").grid(column=2, row=0, sticky=E)
 		self.dollars = IntVar()
 		dollars_entry = ttk.Entry(self.lf2, width=7, textvariable=self.dollars)
@@ -62,19 +62,17 @@ class StartScreen:
 		#DEAL WITH INPUT HERE. VALIDATE INPUTS, GIVE MESSAGE BOX IF INVALID, return.
 		self.window.destroy()
 		if self.risk_value.get() == "":
-			GUI("3", self.dollars.get(), self.filepath)
-		GUI(self.risk_value.get(), self.dollars.get(), self.filepath)
+			GUI("3", self.dollars.get(), self.filepath) # default risk value to 3 if none given.
+		else:	
+			GUI(self.risk_value.get(), self.dollars.get(), self.filepath)
 
 class GUI:
 	def __init__(self, riskVal, d, f):
 		portfolioDict = self.readPortfolio(f)	
 		
-		#sp500 = mpt.StockModel('S+P')
-		
 		path = 'data/'
 		for infile in glob.glob( os.path.join(path, '*.csv') ):
 			ticker = infile.split('/')[1].split('.')[0]
-			print ticker
 			stockModel = mpt.StockModel(ticker)
 			
 			years = len(stockModel.historicalPrices)/float(252)
@@ -87,9 +85,9 @@ class GUI:
 				divisionPoint = len(stockModel.historicalPrices) - 252*4
 				
 				trainingModel = mpt.StockModel(ticker, 0, divisionPoint)
-				trainingSet[ticker] = trainingModel
+				mpt.trainingSet[ticker] = trainingModel
 		
-		#portfolioModel = mpt.PortfolioModel(trainingSet)
+		portfolioModel = mpt.PortfolioModel(mpt.trainingSet)
 		
 		
 		for k, v in portfolioDict.iteritems():
@@ -101,7 +99,7 @@ class GUI:
 	
 		window = Tk()
 		window.title("Test GUI")
-		window.geometry('1100x600+150+130')
+		#window.geometry('1100x600+150+130')
 		window.resizable(FALSE,FALSE)
 		
 		frame = ttk.Frame(window, padding="10 10 10 10")
