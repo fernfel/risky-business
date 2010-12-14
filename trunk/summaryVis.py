@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import matplotlib
+matplotlib.use('TkAgg')
 
 from pylab import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -26,7 +28,7 @@ def getGraph(portfolio, parent):
 def bar_graph(portfolio, parent, graph_title='', output_name='sumVis.png'):
 	sortedP= sorted(portfolio) #list of tickers alphabetically
 	
-	f = Figure(figsize=(MAX_WIDTH, MAX_HEIGHT)) # image dimensions  
+	f = figure(figsize=(MAX_WIDTH, MAX_HEIGHT)) # image dimensions  
 	title(graph_title, size='small')
 	space= 0.2
 	intrv= ACTUAL_W/double(len(portfolio))-space
@@ -59,7 +61,7 @@ def bar_graph(portfolio, parent, graph_title='', output_name='sumVis.png'):
 	
 	canvas = FigureCanvasTkAgg(f, master=parent)
 	return canvas
-
+	
 	return f
 
 #if __name__ == "__main__":

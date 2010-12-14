@@ -110,7 +110,9 @@ class GUI:
 		f1 = ttk.Frame(tabs); # first page, which would get widgets gridded into it
 		tabs.add(f1, text='Portfolio Dashboard')
 		canvas1 = summaryVis.getGraph(portfolio, f1)
+		canvas1.get_tk_widget().grid(column=0, row=0, sticky=(N, W, E, S))
 		canvas1.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+		canvas1._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 		canvas1.show()
 		
 		f2 = ttk.Frame(tabs); # second page
