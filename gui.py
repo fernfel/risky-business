@@ -1,14 +1,14 @@
-#import matplotlib
-#matplotlib.use('TkAgg')
+import matplotlib
+matplotlib.use('TkAgg')
 
-#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from Tkinter import *
 import tkFileDialog
 import ttk # support for Tkinter themed widgets
 import os, glob
-import mpt, getData#, summaryVis
-#import interactivePlot
+import mpt, getData, summaryVis
+import interactivePlot
 
 lastx, lasty = 0, 0
 
@@ -91,14 +91,13 @@ class GUI:
 				trainingModel = mpt.StockModel(ticker, 0, divisionPoint)
 				mpt.trainingSet[ticker] = trainingModel
 		
-		portfolio = mpt.PortfolioModel(mpt.trainingSet)
+		self.portfolio = mpt.PortfolioModel(mpt.trainingSet)
 		
 		
 		for k, v in portfolioDict.iteritems():
-			portfolio.addStock(k, int(v))
-		portfolio.updateStatistics()	
-		risk = portfolio.annualVol
-		
+			self.portfolio.addStock(k, int(v))
+		self.portfolio.updateStatistics()	
+		risk = self.portfolio.annualVol
 	
 		window = Tk()
 		window.title("Test GUI")
@@ -117,12 +116,12 @@ class GUI:
 		
 		f1 = ttk.Frame(tabs); # first page, which would get widgets gridded into it
 		tabs.add(f1, text='Portfolio Dashboard')
-		#fig1 = summaryVis.getGraph(portfolio, f1)
-		#canvas1 = FigureCanvasTkAgg(fig1, master=f1)
-		#canvas1.get_tk_widget().grid(column=0, row=0, sticky=(N, W, E, S))
-		#canvas1.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-		#canvas1._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
-		#canvas1.show()
+		fig1 = summaryVis.getGraph(self.portfolio, f1)
+		canvas1 = FigureCanvasTkAgg(fig1, master=f1)
+		canvas1.get_tk_widget().grid(column=0, row=0, sticky=(N, W, E, S))
+		canvas1.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+		canvas1._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+		canvas1.show()
 		
 		f2 = ttk.Frame(tabs); # second page
 		tabs.add(f2, text='Stock Recommender')
@@ -131,32 +130,32 @@ class GUI:
 #		self.canvas2.bind("<Button-1>", self.xy)
 #		self.canvas2.bind("<B1-Motion>", self.addLine)
 		
-		recommendations = mpt.knn(mpt.trainingSet, portfolio, 5, riskVal, 1, d)
+		recommendations = mpt.knn(mpt.trainingSet, self.portfolio, 5, riskVal, 1, d)
 		recommendDict = dict()
 		
 		for beforeDist, ticker, quantity in recommendations:
-			newPort = mpt.copyPortfolio(portfolio, mpt.testSet)
-       		newPort.addStock(ticker, quantity)
-        	newPort.updateStatistics()
-        	recommendDict[ticker] = newPort
+			newPort = mpt.copyPortfolio(self.portfolio, mpt.testSet)
+			newPort.addStock(ticker, quantity)
+			newPort.updateStatistics()
+			recommendDict[ticker] = newPort
         	
-		#fig2 = interactivePlot.getInteractiveGraph(f2, portfolio, recommendDict, "<Button-1>", riskVal)
+		fig2 = interactivePlot.getInteractiveGraph(f2, self.portfolio, recommendDict, "<Button-1>", riskVal)
 #		recommendedFrame = ttk.Frame(f2)
 #		recommendedFrame.grid(column=0, row=1, sticky=(N, W, E, S))
-		#canvas2 = FigureCanvasTkAgg(fig2, master=f2)
-		#canvas2.get_tk_widget().grid(column=0, row=0, sticky=(N, W, E, S))
+		canvas2 = FigureCanvasTkAgg(fig2, master=f2)
+		canvas2.get_tk_widget().grid(column=0, row=0, sticky=(N, W, E, S))
 #		canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 #		canvas2._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
-		#canvas2.show()
+		canvas2.show()
 				
 		detail_frame = ttk.Frame(f2, padding="10 10 10 10")
 		detail_frame.grid(column=0, row=1, sticky=(N, W, E, S))
 		details = ttk.Label(detail_frame, text='Some Details about the selected stock...')
 		details.grid(column=0, row=0, sticky=(N, W, E, S))
-		
+
 		m = 3
 		for beforeDist, ticker, quantity in recommendations:
-			ttk.Button(detail_frame, text="Add "+ticker+" to Portfolio", command=lambda n=ticker: self.add(n)).grid(column=0, row=m, sticky=SE)
+			ttk.Button(detail_frame, text="Add "+ticker+" to Portfolio", command=lambda n=ticker, q=quantity: self.add(n, q)).grid(column=0, row=m, sticky=SE)
 			m+=1
 		
 		stat_frame = ttk.Frame(window, padding="10 10 10 10")
@@ -176,12 +175,11 @@ class GUI:
 		
 		# Enter event loop (ie run the GUI)
 		window.mainloop()
-
-		
-	def add(self, ticker):
-			
 	
+	def add(self, ticker, quantity):
 		print "added " + ticker
+		self.portfolio.addStock(ticker, quantity)
+		self.portfolio.updateStatistics()
 		
 	def readPortfolio(self, filePath):
 		portfolio = dict()
@@ -198,5 +196,5 @@ class GUI:
 		return portfolio
 		
 if __name__ == "__main__":
-	StartScreen()
-#	GUI(4, 122, "jeff_profile.csv")
+#	StartScreen()
+	GUI(4, 500, "jeff_profile.csv")
