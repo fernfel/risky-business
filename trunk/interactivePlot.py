@@ -3,22 +3,10 @@ from pylab import *
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-x = range(10)
-y = range(10)
-annotes = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
 
-MAX_WIDTH= 5
+MAX_WIDTH= 10
 MAX_HEIGHT= 5
 graph_title= "Recommended Stocks"
-
-"""
-figure(figsize=(MAX_WIDTH, MAX_HEIGHT)) # image dimensions  
-title(graph_title, size='small')
-scatter(x,y)
-af =  annote.AnnoteFinder(x,y, annotes)
-connect('button_press_event', af)
-show()
-"""
 
 def getInteractiveGraph(parent, currentPortfolio, recPortfolios, onclickFxn, idealRisk):
 	return dot_graph(parent, currentPortfolio, recPortfolios, onclickFxn, idealRisk)
@@ -42,13 +30,13 @@ def dot_graph(parent, currPortfolio, recPortfolios, onclickFxn, idealRisk):
 	
 	
 	#current portfolio
-	ax.scatter([currPortfolio.expectedReturn], [currPortfolio.annualVol], c='#000000')
+	ax.scatter([currPortfolio.expectedReturn], [currPortfolio.annualVol], c='k', s=50)
 	
 	#recommended portfolios
-	ax.scatter(ptX, ptY, c='g', marker='x', alpha=.8)
+	ax.scatter(ptX, ptY, c='g', marker='^', s=60, alpha=.3)
 	
 	#
-	ax.scatter([idealRisk],[1], s=30, c='g')
+	ax.scatter([idealRisk],[1], s=60, c='g')
 	
 #		#current portfolio
 #	ax.scatter([currPortfolio.expectedReturn], [currPortfolio.annualVol], c='#000000')
