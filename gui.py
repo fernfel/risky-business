@@ -70,6 +70,8 @@ class StartScreen:
 
 class GUI:
 	def __init__(self, riskVal, d, f):
+		riskVal = riskVal * 20 - 10
+		
 		portfolioDict = self.readPortfolio(f)	
 		
 		path = 'data/'
@@ -129,7 +131,7 @@ class GUI:
 #		self.canvas2.bind("<Button-1>", self.xy)
 #		self.canvas2.bind("<B1-Motion>", self.addLine)
 		
-		recommendations = mpt.knn(mpt.trainingSet, portfolio, 5, .3, 1, d)
+		recommendations = mpt.knn(mpt.trainingSet, portfolio, 5, riskVal, 1, d)
 		recommendDict = dict()
 		
 		for beforeDist, ticker, quantity in recommendations:
